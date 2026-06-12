@@ -32,21 +32,14 @@ public class LoginScreen implements Screen {
         Label titleLabel = new Label("COMPS to Life", skin);
         table.add(titleLabel).padBottom(20).row();
 
-        TextField usernameField = new TextField("", skin);
-        usernameField.setMessageText("Username");
-        table.add(usernameField).width(200).padBottom(10).row();
-
-        TextButton loginButton = new TextButton("Login", skin);
+        TextButton loginButton = new TextButton("Start Game", skin);
         loginButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                String username = usernameField.getText();
-                if (!username.isEmpty()) {
-                    game.setScreen(new GameScreen(game, username));
-                }
+                game.setScreen(new GameScreen(game, "Player"));
             }
         });
-        table.add(loginButton).width(100);
+        table.add(loginButton).width(150);
     }
 
     @Override
