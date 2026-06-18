@@ -23,6 +23,8 @@ import com.upnvj.compstolife.CompsGame;
 import com.upnvj.compstolife.database.DatabaseManager;
 import com.upnvj.compstolife.entities.Player;
 
+import com.badlogic.gdx.audio.Sound;
+
 public class GameScreen implements Screen {
     private final CompsGame game;
     private final Player player;
@@ -53,9 +55,15 @@ public class GameScreen implements Screen {
     private boolean showCustomDialog = false;
     private DatabaseManager dbManager;
 
-    // NPC properties
+    // Transition variables
+    private float fadeAlpha = 1.0f;
+    private float fadeSpeed = 0.5f;
+
+    // NPC and Sound properties
     private Vector2 npcPos;
     private Texture dialogBoxTexture;
+    private Sound runSound;
+    private long runSoundId = -1;
 
     public GameScreen(CompsGame game, String username) {
         this.game = game;
@@ -72,6 +80,9 @@ public class GameScreen implements Screen {
         // NPC Adam at (8,5)
         this.npcPos = new Vector2(8 * TILE_SIZE, 5 * TILE_SIZE);
         this.dialogBoxTexture = new Texture(Gdx.files.internal("dialog-box-example.png"));
+        
+        // Load Sound
+        runSound = Gdx.audio.newSound(Gdx.files.internal("Run.ogg"));
 
         walkSheet = new Texture(Gdx.files.internal("bob_run.png"));
         idleSheet = new Texture(Gdx.files.internal("bob_idle.png"));
@@ -119,7 +130,6 @@ public class GameScreen implements Screen {
             handleInput(delta);
             update(delta);
         } else if (showCustomDialog) {
-            // If dialog is active, check for Enter to close it
             if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
                 showCustomDialog = false;
             }
@@ -137,34 +147,40 @@ public class GameScreen implements Screen {
         game.batch.begin();
         stateTime += delta;
 
-        // Draw NPC Adam using bob's idle animation
         TextureRegion npcFrame = idleDown.getKeyFrame(stateTime, true);
         game.batch.draw(npcFrame, npcPos.x + 8, npcPos.y, 16, 32);
 
         TextureRegion currentFrame = currentAnimation.getKeyFrame(stateTime, true);
         game.batch.draw(currentFrame, playerPos.x + 8, playerPos.y, 16, 32);
-        
         game.batch.end();
 
         uiStage.act(delta);
         uiStage.draw();
 
-        // Draw Custom Dialog Image over everything if active
         if (showCustomDialog) {
             game.batch.setProjectionMatrix(uiStage.getCamera().combined);
             game.batch.begin();
-            // Scale and position the dialog box image
             float screenWidth = Gdx.graphics.getWidth();
             float screenHeight = Gdx.graphics.getHeight();
-            
-            float dialogWidth = screenWidth * 0.9f; // Slightly wider for bottom placement
+            float dialogWidth = screenWidth * 0.9f;
             float dialogHeight = (dialogWidth / dialogBoxTexture.getWidth()) * dialogBoxTexture.getHeight();
-            
             float x = (screenWidth - dialogWidth) / 2;
-            float y = 20; // 20px margin from bottom
-            
+            float y = 20;
             game.batch.draw(dialogBoxTexture, x, y, dialogWidth, dialogHeight);
             game.batch.end();
+        }
+
+        if (fadeAlpha > 0) {
+            fadeAlpha -= delta * fadeSpeed;
+            if (fadeAlpha < 0) fadeAlpha = 0;
+
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(0, 0, 0, fadeAlpha);
+            shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            shapeRenderer.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
         }
     }
 
@@ -240,12 +256,8 @@ public class GameScreen implements Screen {
 
     private void checkInteraction() {
         float distance = playerPos.dst(npcPos);
-        Gdx.app.log("Interaction", "Distance to NPC: " + distance);
-        
-        // Increase range slightly to make it easier to trigger (1.5 tiles)
         if (distance <= TILE_SIZE * 1.5f) {
             showCustomDialog = true;
-            Gdx.app.log("Interaction", "Custom Dialog Shown");
         }
     }
 
@@ -264,6 +276,11 @@ public class GameScreen implements Screen {
 
     private void update(float delta) {
         if (isMoving) {
+            // Play running sound if not already playing
+            if (runSoundId == -1) {
+                runSoundId = runSound.loop(1.0f);
+            }
+
             float moveAmount = moveSpeed * delta;
             if (playerPos.x < targetPos.x) playerPos.x = Math.min(playerPos.x + moveAmount, targetPos.x);
             else if (playerPos.x > targetPos.x) playerPos.x = Math.max(playerPos.x - moveAmount, targetPos.x);
@@ -273,6 +290,9 @@ public class GameScreen implements Screen {
             if (playerPos.epsilonEquals(targetPos, 1f)) {
                 playerPos.set(targetPos);
                 isMoving = false;
+                // Stop sound when target reached
+                runSound.stop(runSoundId);
+                runSoundId = -1;
             }
         }
         camera.position.set(playerPos.x + 16, playerPos.y + 16, 0);
@@ -295,6 +315,10 @@ public class GameScreen implements Screen {
     @Override
     public void hide() {
         Gdx.input.setInputProcessor(null);
+        if (runSoundId != -1) {
+            runSound.stop(runSoundId);
+            runSoundId = -1;
+        }
     }
 
     @Override
@@ -305,6 +329,7 @@ public class GameScreen implements Screen {
         if (mapRenderer != null) mapRenderer.dispose();
         if (shapeRenderer != null) shapeRenderer.dispose();
         if (dialogBoxTexture != null) dialogBoxTexture.dispose();
+        if (runSound != null) runSound.dispose();
         uiStage.dispose();
         skin.dispose();
     }
