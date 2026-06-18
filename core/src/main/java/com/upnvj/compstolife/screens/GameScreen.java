@@ -6,13 +6,19 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import com.badlogic.gdx.graphics.g2d.Animation;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TmxMapLoader;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
+import com.badlogic.gdx.maps.tiled.TiledMapTileLayer.Cell;
+import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.upnvj.compstolife.CompsGame;
 import com.upnvj.compstolife.database.DatabaseManager;
 import com.upnvj.compstolife.entities.Player;
@@ -21,8 +27,14 @@ public class GameScreen implements Screen {
     private final CompsGame game;
     private final Player player;
     private OrthographicCamera camera;
+    private ShapeRenderer shapeRenderer;
     private Vector2 playerPos;
-    private float moveSpeed = 200f;
+    private Vector2 targetPos;
+    private float moveSpeed = 120f;
+    private final float TILE_SIZE = 32f;
+
+    private TiledMap map;
+    private OrthogonalTiledMapRenderer mapRenderer;
 
     private Texture walkSheet;
     private Texture idleSheet;
@@ -30,7 +42,7 @@ public class GameScreen implements Screen {
     private Animation<TextureRegion> idleDown, idleUp, idleLeft, idleRight;
     private Animation<TextureRegion> currentAnimation;
     private float stateTime;
-    private boolean isMoving;
+    private boolean isMoving = false;
     
     private enum Direction { DOWN, UP, LEFT, RIGHT }
     private Direction lastDirection = Direction.DOWN;
@@ -38,25 +50,29 @@ public class GameScreen implements Screen {
     private Stage uiStage;
     private Skin skin;
     private boolean quizActive = false;
+    private boolean showCustomDialog = false;
     private DatabaseManager dbManager;
 
-    // Map constants
-    private final int TILE_SIZE = 32;
-    private final int MAP_WIDTH = 20;  // 20 tiles wide
-    private final int MAP_HEIGHT = 20; // 20 tiles high
-    private Texture whitePixel;
-    private Texture blackPixel;
+    // NPC properties
+    private Vector2 npcPos;
+    private Texture dialogBoxTexture;
 
     public GameScreen(CompsGame game, String username) {
         this.game = game;
         this.player = new Player(username);
         this.camera = new OrthographicCamera();
-        this.camera.setToOrtho(false, 800, 480);
+        this.shapeRenderer = new ShapeRenderer();
         
-        // Start in the middle of the white area
-        this.playerPos = new Vector2(MAP_WIDTH * TILE_SIZE / 2f, MAP_HEIGHT * TILE_SIZE / 2f);
+        map = new TmxMapLoader().load("map.tmx");
+        mapRenderer = new OrthogonalTiledMapRenderer(map, game.batch);
 
-        // Load Spritesheets
+        this.playerPos = new Vector2(5 * TILE_SIZE, 5 * TILE_SIZE);
+        this.targetPos = new Vector2(playerPos);
+
+        // NPC Adam at (8,5)
+        this.npcPos = new Vector2(8 * TILE_SIZE, 5 * TILE_SIZE);
+        this.dialogBoxTexture = new Texture(Gdx.files.internal("dialog-box-example.png"));
+
         walkSheet = new Texture(Gdx.files.internal("bob_run.png"));
         idleSheet = new Texture(Gdx.files.internal("bob_idle.png"));
         
@@ -66,26 +82,20 @@ public class GameScreen implements Screen {
         int frameWidth = 16;
         int frameHeight = 32;
         
-        // Split Walk Animations
         TextureRegion[][] walkTmp = TextureRegion.split(walkSheet, frameWidth, frameHeight);
-        walkDown = createHorizontalAnimation(walkTmp, 18); // Swapped: 18-23
-        walkUp = createHorizontalAnimation(walkTmp, 6);   // 6-11
-        walkLeft = createHorizontalAnimation(walkTmp, 12); // 12-17
-        walkRight = createHorizontalAnimation(walkTmp, 0);  // Swapped: 0-5
+        walkDown = createHorizontalAnimation(walkTmp, 18);
+        walkUp = createHorizontalAnimation(walkTmp, 6);
+        walkLeft = createHorizontalAnimation(walkTmp, 12);
+        walkRight = createHorizontalAnimation(walkTmp, 0);
 
-        // Split Idle Animations
         TextureRegion[][] idleTmp = TextureRegion.split(idleSheet, frameWidth, frameHeight);
-        idleDown = createHorizontalAnimation(idleTmp, 18); // Swapped: 18-23
-        idleUp = createHorizontalAnimation(idleTmp, 6);   // 6-11
-        idleLeft = createHorizontalAnimation(idleTmp, 12); // 12-17
-        idleRight = createHorizontalAnimation(idleTmp, 0);  // Swapped: 0-5
+        idleDown = createHorizontalAnimation(idleTmp, 18);
+        idleUp = createHorizontalAnimation(idleTmp, 6);
+        idleLeft = createHorizontalAnimation(idleTmp, 12);
+        idleRight = createHorizontalAnimation(idleTmp, 0);
 
         currentAnimation = idleDown;
         stateTime = 0f;
-
-        // Map textures
-        whitePixel = createPixelTexture(1, 1, 1, 1);
-        blackPixel = createPixelTexture(0, 0, 0, 1);
 
         this.uiStage = new Stage(new ScreenViewport());
         this.skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
@@ -98,15 +108,6 @@ public class GameScreen implements Screen {
         return new Animation<>(0.1f, frames);
     }
 
-    private Texture createPixelTexture(float r, float g, float b, float a) {
-        com.badlogic.gdx.graphics.Pixmap pixmap = new com.badlogic.gdx.graphics.Pixmap(1, 1, com.badlogic.gdx.graphics.Pixmap.Format.RGBA8888);
-        pixmap.setColor(r, g, b, a);
-        pixmap.fill();
-        Texture texture = new Texture(pixmap);
-        pixmap.dispose();
-        return texture;
-    }
-
     @Override
     public void show() {
         Gdx.input.setInputProcessor(uiStage);
@@ -114,70 +115,120 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        if (!quizActive) {
+        if (!quizActive && !showCustomDialog) {
             handleInput(delta);
             update(delta);
-        }
-
-        Gdx.gl.glClearColor(0, 0, 0, 1); // Background black
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        camera.update();
-        game.batch.setProjectionMatrix(camera.combined);
-        game.batch.begin();
-
-        // Draw Map
-        for (int x = 0; x < MAP_WIDTH; x++) {
-            for (int y = 0; y < MAP_HEIGHT; y++) {
-                if (x == 0 || x == MAP_WIDTH - 1 || y == 0 || y == MAP_HEIGHT - 1) {
-                    game.batch.draw(blackPixel, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                } else {
-                    game.batch.draw(whitePixel, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                }
+        } else if (showCustomDialog) {
+            // If dialog is active, check for Enter to close it
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+                showCustomDialog = false;
             }
         }
 
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        camera.update();
+        mapRenderer.setView(camera);
+        mapRenderer.render();
+
+        drawGrid();
+
+        game.batch.begin();
         stateTime += delta;
+
+        // Draw NPC Adam using bob's idle animation
+        TextureRegion npcFrame = idleDown.getKeyFrame(stateTime, true);
+        game.batch.draw(npcFrame, npcPos.x + 8, npcPos.y, 16, 32);
+
         TextureRegion currentFrame = currentAnimation.getKeyFrame(stateTime, true);
-        
-        // Draw character
-        game.batch.draw(currentFrame, playerPos.x, playerPos.y, 32, 64);
+        game.batch.draw(currentFrame, playerPos.x + 8, playerPos.y, 16, 32);
         
         game.batch.end();
 
         uiStage.act(delta);
         uiStage.draw();
+
+        // Draw Custom Dialog Image over everything if active
+        if (showCustomDialog) {
+            game.batch.setProjectionMatrix(uiStage.getCamera().combined);
+            game.batch.begin();
+            // Scale and position the dialog box image
+            float screenWidth = Gdx.graphics.getWidth();
+            float screenHeight = Gdx.graphics.getHeight();
+            
+            float dialogWidth = screenWidth * 0.9f; // Slightly wider for bottom placement
+            float dialogHeight = (dialogWidth / dialogBoxTexture.getWidth()) * dialogBoxTexture.getHeight();
+            
+            float x = (screenWidth - dialogWidth) / 2;
+            float y = 20; // 20px margin from bottom
+            
+            game.batch.draw(dialogBoxTexture, x, y, dialogWidth, dialogHeight);
+            game.batch.end();
+        }
+    }
+
+    private void drawGrid() {
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapeRenderer.setProjectionMatrix(camera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(new Color(1, 1, 1, 0.2f));
+        
+        TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get("Background");
+        if (layer != null) {
+            int width = layer.getWidth();
+            int height = layer.getHeight();
+            for (float x = 0; x <= width * TILE_SIZE; x += TILE_SIZE) {
+                shapeRenderer.line(x, 0, x, height * TILE_SIZE);
+            }
+            for (float y = 0; y <= height * TILE_SIZE; y += TILE_SIZE) {
+                shapeRenderer.line(0, y, width * TILE_SIZE, y);
+            }
+        }
+        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
     private void handleInput(float delta) {
-        isMoving = false;
-        float nextX = playerPos.x;
-        float nextY = playerPos.y;
-        float moveAmount = moveSpeed * delta;
+        if (isMoving) return;
 
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            nextX -= moveAmount;
-            currentAnimation = walkLeft;
-            lastDirection = Direction.LEFT;
-            isMoving = true;
-        } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            nextX += moveAmount;
-            currentAnimation = walkRight;
-            lastDirection = Direction.RIGHT;
-            isMoving = true;
-        } else if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-            nextY += moveAmount;
-            currentAnimation = walkUp;
-            lastDirection = Direction.UP;
-            isMoving = true;
-        } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            nextY -= moveAmount;
-            currentAnimation = walkDown;
-            lastDirection = Direction.DOWN;
-            isMoving = true;
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+            checkInteraction();
         }
 
-        if (!isMoving) {
+        float nextX = playerPos.x;
+        float nextY = playerPos.y;
+        boolean attemptingMove = false;
+
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            nextX -= TILE_SIZE;
+            lastDirection = Direction.LEFT;
+            currentAnimation = walkLeft;
+            attemptingMove = true;
+        } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            nextX += TILE_SIZE;
+            lastDirection = Direction.RIGHT;
+            currentAnimation = walkRight;
+            attemptingMove = true;
+        } else if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
+            nextY += TILE_SIZE;
+            lastDirection = Direction.UP;
+            currentAnimation = walkUp;
+            attemptingMove = true;
+        } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+            nextY -= TILE_SIZE;
+            lastDirection = Direction.DOWN;
+            currentAnimation = walkDown;
+            attemptingMove = true;
+        }
+
+        if (attemptingMove) {
+            if (isCellPassable(nextX, nextY)) {
+                targetPos.set(nextX, nextY);
+                isMoving = true;
+            }
+        } else {
             switch (lastDirection) {
                 case DOWN: currentAnimation = idleDown; break;
                 case UP: currentAnimation = idleUp; break;
@@ -185,39 +236,52 @@ public class GameScreen implements Screen {
                 case RIGHT: currentAnimation = idleRight; break;
             }
         }
+    }
 
-        // Collision detection with borders
-        float playerWidth = 24;
-        float playerHeight = 24; 
-        float offsetX = (32 - playerWidth) / 2;
-
-        if (isPassable(nextX + offsetX, nextY) && 
-            isPassable(nextX + offsetX + playerWidth, nextY) &&
-            isPassable(nextX + offsetX, nextY + playerHeight) &&
-            isPassable(nextX + offsetX + playerWidth, nextY + playerHeight)) {
-            playerPos.x = nextX;
-            playerPos.y = nextY;
+    private void checkInteraction() {
+        float distance = playerPos.dst(npcPos);
+        Gdx.app.log("Interaction", "Distance to NPC: " + distance);
+        
+        // Increase range slightly to make it easier to trigger (1.5 tiles)
+        if (distance <= TILE_SIZE * 1.5f) {
+            showCustomDialog = true;
+            Gdx.app.log("Interaction", "Custom Dialog Shown");
         }
     }
 
-    private boolean isPassable(float x, float y) {
-        int tileX = (int) (x / TILE_SIZE);
-        int tileY = (int) (y / TILE_SIZE);
-        
-        if (tileX <= 0 || tileX >= MAP_WIDTH - 1 || tileY <= 0 || tileY >= MAP_HEIGHT - 1) {
-            return false;
-        }
+    private boolean isCellPassable(float x, float y) {
+        int cellX = (int) (x / TILE_SIZE);
+        int cellY = (int) (y / TILE_SIZE);
+        TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get("Background");
+        if (layer == null) return true;
+        if (cellX < 0 || cellX >= layer.getWidth() || cellY < 0 || cellY >= layer.getHeight()) return false;
+        Cell cell = layer.getCell(cellX, cellY);
+        if (cell == null) return false;
+        Object blocked = cell.getTile().getProperties().get("blocked");
+        if (blocked != null) return false;
         return true;
     }
 
     private void update(float delta) {
-        camera.position.set(playerPos.x + 16, playerPos.y + 32, 0);
+        if (isMoving) {
+            float moveAmount = moveSpeed * delta;
+            if (playerPos.x < targetPos.x) playerPos.x = Math.min(playerPos.x + moveAmount, targetPos.x);
+            else if (playerPos.x > targetPos.x) playerPos.x = Math.max(playerPos.x - moveAmount, targetPos.x);
+            else if (playerPos.y < targetPos.y) playerPos.y = Math.min(playerPos.y + moveAmount, targetPos.y);
+            else if (playerPos.y > targetPos.y) playerPos.y = Math.max(playerPos.y - moveAmount, targetPos.y);
+
+            if (playerPos.epsilonEquals(targetPos, 1f)) {
+                playerPos.set(targetPos);
+                isMoving = false;
+            }
+        }
+        camera.position.set(playerPos.x + 16, playerPos.y + 16, 0);
     }
 
     @Override
     public void resize(int width, int height) {
-        camera.viewportWidth = 800f;
-        camera.viewportHeight = 800f * height / width;
+        camera.viewportWidth = 400;
+        camera.viewportHeight = 400f * height / width;
         camera.update();
         uiStage.getViewport().update(width, height, true);
     }
@@ -237,8 +301,10 @@ public class GameScreen implements Screen {
     public void dispose() {
         if (walkSheet != null) walkSheet.dispose();
         if (idleSheet != null) idleSheet.dispose();
-        if (whitePixel != null) whitePixel.dispose();
-        if (blackPixel != null) blackPixel.dispose();
+        if (map != null) map.dispose();
+        if (mapRenderer != null) mapRenderer.dispose();
+        if (shapeRenderer != null) shapeRenderer.dispose();
+        if (dialogBoxTexture != null) dialogBoxTexture.dispose();
         uiStage.dispose();
         skin.dispose();
     }
