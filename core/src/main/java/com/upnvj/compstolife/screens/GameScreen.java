@@ -33,7 +33,7 @@ public class GameScreen implements Screen {
     private Vector2 playerPos;
     private Vector2 targetPos;
     private float moveSpeed = 120f;
-    private final float TILE_SIZE = 32f;
+    private final float TILE_SIZE = 16f;
 
     private TiledMap map;
     private OrthogonalTiledMapRenderer mapRenderer;
@@ -45,7 +45,7 @@ public class GameScreen implements Screen {
     private Animation<TextureRegion> currentAnimation;
     private float stateTime;
     private boolean isMoving = false;
-    
+
     private enum Direction { DOWN, UP, LEFT, RIGHT }
     private Direction lastDirection = Direction.DOWN;
 
@@ -61,6 +61,11 @@ public class GameScreen implements Screen {
 
     // NPC and Sound properties
     private Vector2 npcPos;
+    private Vector2 npcAlmetPos;
+    private Texture npcAlmetSheet;
+    private Animation<TextureRegion> almetDown, almetUp, almetLeft, almetRight;
+    private Direction almetDirection = Direction.DOWN;
+    private float almetTimer = 0;
     private Texture dialogBoxTexture;
     private Sound runSound;
     private long runSoundId = -1;
@@ -70,29 +75,33 @@ public class GameScreen implements Screen {
         this.player = new Player(username);
         this.camera = new OrthographicCamera();
         this.shapeRenderer = new ShapeRenderer();
-        
+
         map = new TmxMapLoader().load("map.tmx");
         mapRenderer = new OrthogonalTiledMapRenderer(map, game.batch);
 
-        this.playerPos = new Vector2(5 * TILE_SIZE, 5 * TILE_SIZE);
+        this.playerPos = new Vector2(46 * TILE_SIZE, 4 * TILE_SIZE);
         this.targetPos = new Vector2(playerPos);
 
-        // NPC Adam at (8,5)
-        this.npcPos = new Vector2(8 * TILE_SIZE, 5 * TILE_SIZE);
+        // NPC Adam at (47,64)
+        this.npcPos = new Vector2(47 * TILE_SIZE, 64 * TILE_SIZE);
+        // NPC Almet 2 tiles above Adam (47,66)
+        this.npcAlmetPos = new Vector2(47 * TILE_SIZE, 66 * TILE_SIZE);
         this.dialogBoxTexture = new Texture(Gdx.files.internal("dialog-box-example.png"));
-        
+
         // Load Sound
         runSound = Gdx.audio.newSound(Gdx.files.internal("Run.ogg"));
 
         walkSheet = new Texture(Gdx.files.internal("bob_run.png"));
         idleSheet = new Texture(Gdx.files.internal("bob_idle.png"));
-        
+        npcAlmetSheet = new Texture(Gdx.files.internal("almet-stop.png"));
+
         walkSheet.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         idleSheet.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        npcAlmetSheet.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
 
         int frameWidth = 16;
         int frameHeight = 32;
-        
+
         TextureRegion[][] walkTmp = TextureRegion.split(walkSheet, frameWidth, frameHeight);
         walkDown = createHorizontalAnimation(walkTmp, 18);
         walkUp = createHorizontalAnimation(walkTmp, 6);
@@ -104,6 +113,28 @@ public class GameScreen implements Screen {
         idleUp = createHorizontalAnimation(idleTmp, 6);
         idleLeft = createHorizontalAnimation(idleTmp, 12);
         idleRight = createHorizontalAnimation(idleTmp, 0);
+
+        // Almet Animations (assuming 4 frames: DOWN, UP, LEFT, RIGHT)
+        int almetFrameWidth = npcAlmetSheet.getWidth() / 4;
+        int almetFrameHeight = npcAlmetSheet.getHeight();
+
+        if (almetFrameWidth > 0 && almetFrameHeight > 0) {
+            TextureRegion[][] almetTmp = TextureRegion.split(npcAlmetSheet, almetFrameWidth, almetFrameHeight);
+            if (almetTmp.length > 0 && almetTmp[0].length >= 4) {
+                almetDown = new Animation<>(0.1f, almetTmp[0][0]);
+                almetUp = new Animation<>(0.1f, almetTmp[0][1]);
+                almetLeft = new Animation<>(0.1f, almetTmp[0][2]);
+                almetRight = new Animation<>(0.1f, almetTmp[0][3]);
+            } else {
+                // Fallback if not enough frames
+                TextureRegion fullRegion = new TextureRegion(npcAlmetSheet);
+                almetDown = almetUp = almetLeft = almetRight = new Animation<>(0.1f, fullRegion);
+            }
+        } else {
+            // Fallback if texture is too small to split into 4
+            TextureRegion fullRegion = new TextureRegion(npcAlmetSheet);
+            almetDown = almetUp = almetLeft = almetRight = new Animation<>(0.1f, fullRegion);
+        }
 
         currentAnimation = idleDown;
         stateTime = 0f;
@@ -147,11 +178,33 @@ public class GameScreen implements Screen {
         game.batch.begin();
         stateTime += delta;
 
+        // Rotation logic for Almet
+        almetTimer += delta;
+        if (almetTimer >= 1.0f) {
+            almetTimer = 0;
+            switch (almetDirection) {
+                case DOWN: almetDirection = Direction.RIGHT; break;
+                case RIGHT: almetDirection = Direction.UP; break;
+                case UP: almetDirection = Direction.LEFT; break;
+                case LEFT: almetDirection = Direction.DOWN; break;
+            }
+        }
+
         TextureRegion npcFrame = idleDown.getKeyFrame(stateTime, true);
-        game.batch.draw(npcFrame, npcPos.x + 8, npcPos.y, 16, 32);
+        game.batch.draw(npcFrame, npcPos.x, npcPos.y, 16, 32);
+
+        Animation<TextureRegion> almetAnim;
+        switch (almetDirection) {
+            case UP: almetAnim = almetUp; break;
+            case LEFT: almetAnim = almetLeft; break;
+            case RIGHT: almetAnim = almetRight; break;
+            default: almetAnim = almetDown; break;
+        }
+        TextureRegion almetFrame = almetAnim.getKeyFrame(stateTime, true);
+        game.batch.draw(almetFrame, npcAlmetPos.x, npcAlmetPos.y, 16, 32);
 
         TextureRegion currentFrame = currentAnimation.getKeyFrame(stateTime, true);
-        game.batch.draw(currentFrame, playerPos.x + 8, playerPos.y, 16, 32);
+        game.batch.draw(currentFrame, playerPos.x, playerPos.y, 16, 32);
         game.batch.end();
 
         uiStage.act(delta);
@@ -190,8 +243,8 @@ public class GameScreen implements Screen {
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(new Color(1, 1, 1, 0.2f));
-        
-        TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get("Background");
+
+        TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get("Tile Layer 1");
         if (layer != null) {
             int width = layer.getWidth();
             int height = layer.getHeight();
@@ -264,7 +317,7 @@ public class GameScreen implements Screen {
     private boolean isCellPassable(float x, float y) {
         int cellX = (int) (x / TILE_SIZE);
         int cellY = (int) (y / TILE_SIZE);
-        TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get("Background");
+        TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get("Tile Layer 1");
         if (layer == null) return true;
         if (cellX < 0 || cellX >= layer.getWidth() || cellY < 0 || cellY >= layer.getHeight()) return false;
         Cell cell = layer.getCell(cellX, cellY);
@@ -325,6 +378,7 @@ public class GameScreen implements Screen {
     public void dispose() {
         if (walkSheet != null) walkSheet.dispose();
         if (idleSheet != null) idleSheet.dispose();
+        if (npcAlmetSheet != null) npcAlmetSheet.dispose();
         if (map != null) map.dispose();
         if (mapRenderer != null) mapRenderer.dispose();
         if (shapeRenderer != null) shapeRenderer.dispose();
