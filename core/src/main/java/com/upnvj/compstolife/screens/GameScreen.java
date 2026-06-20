@@ -24,6 +24,8 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.upnvj.compstolife.CompsGame;
 import com.upnvj.compstolife.database.DatabaseManager;
 import com.upnvj.compstolife.entities.Player;
+import java.util.List;
+import java.util.ArrayList;
 
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -82,6 +84,9 @@ public class GameScreen implements Screen {
     private Texture npcArkaTexture;
     private Texture npcAryaTexture;
 
+    // Extra NPCs
+    private List<GameNPC> extraNpcs;
+
     private Texture dialogBoxTexture;
     private Label dialogLabel;
     private String currentDialogText = "";
@@ -127,6 +132,18 @@ public class GameScreen implements Screen {
         this.npcArkaPos = new Vector2(45 * TILE_SIZE, 15 * TILE_SIZE);
         // NPC Arya diagonal-right of spawn (47,15)
         this.npcAryaPos = new Vector2(47 * TILE_SIZE, 15 * TILE_SIZE);
+
+        // Initialize extra NPCs
+        this.extraNpcs = new ArrayList<>();
+        this.extraNpcs.add(new GameNPC("Ayu", 44f, 20f, "sprite/ayu.png", "Ayu: Halo! Aku Ayu. Jangan lupa untuk mengerjakan tugas kuliahmu tepat waktu ya!", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Nadhifa", 48f, 20f, "sprite/nadhifa.png", "Nadhifa: Hai! Aku Nadhifa. Selamat datang di Fakultas Ilmu Komputer!", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Nadia", 44f, 30f, "sprite/nadia.png", "Nadia: Halo! Aku Nadia. Senang sekali melihatmu bersemangat menjelajahi kampus ini!", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Pak Hendra", 48f, 30f, "sprite/pak-hendra.png", "Pak Hendra: Selamat pagi mahasiswa sekalian. Ingat, kegagalan hari ini adalah awal dari kesuksesan!", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Reyhan", 44f, 40f, "sprite/reyhan.png", "Reyhan: Hei! Aku Reyhan. Sudahkah kamu memeriksa jadwal kuliah hari ini?", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Rizky", 48f, 40f, "sprite/rizky.png", "Rizky: Halo bro! Aku Rizky. Jangan lupa minum air putih yang cukup ya kalau sedang coding.", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Salsa", 44f, 50f, "sprite/salsa.png", "Salsa: Hai! Aku Salsa. Semoga harimu menyenangkan dan perkuliahanmu berjalan lancar!", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Tasya", 48f, 50f, "sprite/tasya.png", "Tasya: Halo! Aku Tasya. Perpustakaan ada di dekat sini, belajarlah dengan rajin!", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Zaki", 45f, 58f, "sprite/zaki.png", "Zaki: Yo! Aku Zaki. Main game boleh saja, tapi jangan sampai melupakan tugas utama kita sebagai mahasiswa.", TILE_SIZE));
 
         this.dialogBoxTexture = new Texture(Gdx.files.internal("dialog/dialog-box.png"));
 
@@ -407,6 +424,13 @@ public class GameScreen implements Screen {
         game.batch.draw(npcArkaTexture, npcArkaPos.x, npcArkaPos.y, 16, 32);
         game.batch.draw(npcAryaTexture, npcAryaPos.x, npcAryaPos.y, 16, 32);
 
+        // Render extra NPCs
+        if (extraNpcs != null) {
+            for (GameNPC npc : extraNpcs) {
+                npc.draw(game.batch);
+            }
+        }
+
         TextureRegion currentFrame = currentAnimation.getKeyFrame(stateTime, true);
         game.batch.draw(currentFrame, playerPos.x, playerPos.y, 16, 32);
         game.batch.end();
@@ -439,6 +463,7 @@ public class GameScreen implements Screen {
         if (isPaused) {
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapeRenderer.setProjectionMatrix(uiStage.getCamera().combined);
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             shapeRenderer.setColor(0, 0, 0, 0.5f); // 50% opacity black
             shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -455,6 +480,7 @@ public class GameScreen implements Screen {
 
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapeRenderer.setProjectionMatrix(uiStage.getCamera().combined);
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             shapeRenderer.setColor(0, 0, 0, fadeAlpha);
             shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -551,6 +577,15 @@ public class GameScreen implements Screen {
             currentDialogText = "Arya: Halo, kawan! Aku Arya. Selamat berpetualang di dunia COMPS to Life!";
             dialogLabel.setText(currentDialogText);
             showCustomDialog = true;
+        } else if (extraNpcs != null) {
+            for (GameNPC npc : extraNpcs) {
+                if (npc.isNearPlayer(playerPos, TILE_SIZE)) {
+                    currentDialogText = npc.getDialogText();
+                    dialogLabel.setText(currentDialogText);
+                    showCustomDialog = true;
+                    break;
+                }
+            }
         }
     }
 
@@ -628,6 +663,11 @@ public class GameScreen implements Screen {
         if (npcAlmetSheet != null) npcAlmetSheet.dispose();
         if (npcArkaTexture != null) npcArkaTexture.dispose();
         if (npcAryaTexture != null) npcAryaTexture.dispose();
+        if (extraNpcs != null) {
+            for (GameNPC npc : extraNpcs) {
+                npc.dispose();
+            }
+        }
         if (map != null) map.dispose();
         if (mapRenderer != null) mapRenderer.dispose();
         if (shapeRenderer != null) shapeRenderer.dispose();
@@ -649,5 +689,36 @@ public class GameScreen implements Screen {
 
         uiStage.dispose();
         skin.dispose();
+    }
+
+    private static class GameNPC {
+        private final String name;
+        private final Vector2 position;
+        private final Texture texture;
+        private final String dialogText;
+
+        public GameNPC(String name, float tileX, float tileY, String texturePath, String dialogText, float tileSize) {
+            this.name = name;
+            this.position = new Vector2(tileX * tileSize, tileY * tileSize);
+            this.texture = new Texture(Gdx.files.internal(texturePath));
+            this.texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+            this.dialogText = dialogText;
+        }
+
+        public void draw(com.badlogic.gdx.graphics.g2d.SpriteBatch batch) {
+            batch.draw(texture, position.x, position.y, 16, 32);
+        }
+
+        public boolean isNearPlayer(Vector2 playerPos, float tileSize) {
+            return playerPos.dst(position) <= tileSize * 1.5f;
+        }
+
+        public String getDialogText() {
+            return dialogText;
+        }
+
+        public void dispose() {
+            if (texture != null) texture.dispose();
+        }
     }
 }
