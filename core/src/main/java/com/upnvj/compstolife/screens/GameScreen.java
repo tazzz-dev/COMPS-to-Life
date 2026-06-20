@@ -11,6 +11,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
@@ -24,6 +26,13 @@ import com.upnvj.compstolife.database.DatabaseManager;
 import com.upnvj.compstolife.entities.Player;
 
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 
 public class GameScreen implements Screen {
     private final CompsGame game;
@@ -66,9 +75,35 @@ public class GameScreen implements Screen {
     private Animation<TextureRegion> almetDown, almetUp, almetLeft, almetRight;
     private Direction almetDirection = Direction.DOWN;
     private float almetTimer = 0;
+
+    // Arka and Arya NPCs
+    private Vector2 npcArkaPos;
+    private Vector2 npcAryaPos;
+    private Texture npcArkaTexture;
+    private Texture npcAryaTexture;
+
     private Texture dialogBoxTexture;
+    private Label dialogLabel;
+    private String currentDialogText = "";
     private Sound runSound;
     private long runSoundId = -1;
+
+    // Pause components
+    private boolean isPaused = false;
+    private ImageButton pauseButton;
+    private Table pauseMenuTable;
+    private ImageButton resumeButton;
+    private ImageButton settingButton;
+    private ImageButton backMenuButton;
+    private Texture pauseNormalTex, pauseHoverTex;
+    private Texture resumeNormalTex, resumeHoverTex;
+    private Texture settingNormalTex, settingHoverTex;
+    private Texture backMenuNormalTex, backMenuHoverTex;
+    private Texture pauseTitleTex;
+    private Sound hoverSound;
+    private Sound clickSound;
+
+
 
     public GameScreen(CompsGame game, String username) {
         this.game = game;
@@ -76,8 +111,9 @@ public class GameScreen implements Screen {
         this.camera = new OrthographicCamera();
         this.shapeRenderer = new ShapeRenderer();
 
-        map = new TmxMapLoader().load("map.tmx");
+        map = new TmxMapLoader().load("map/map.tmx");
         mapRenderer = new OrthogonalTiledMapRenderer(map, game.batch);
+
 
         this.playerPos = new Vector2(46 * TILE_SIZE, 4 * TILE_SIZE);
         this.targetPos = new Vector2(playerPos);
@@ -86,18 +122,28 @@ public class GameScreen implements Screen {
         this.npcPos = new Vector2(47 * TILE_SIZE, 64 * TILE_SIZE);
         // NPC Almet 2 tiles above Adam (47,66)
         this.npcAlmetPos = new Vector2(47 * TILE_SIZE, 66 * TILE_SIZE);
-        this.dialogBoxTexture = new Texture(Gdx.files.internal("dialog-box-example.png"));
+
+        // NPC Arka diagonal-left of spawn (45,15)
+        this.npcArkaPos = new Vector2(45 * TILE_SIZE, 15 * TILE_SIZE);
+        // NPC Arya diagonal-right of spawn (47,15)
+        this.npcAryaPos = new Vector2(47 * TILE_SIZE, 15 * TILE_SIZE);
+
+        this.dialogBoxTexture = new Texture(Gdx.files.internal("dialog/dialog-box.png"));
 
         // Load Sound
         runSound = Gdx.audio.newSound(Gdx.files.internal("Run.ogg"));
 
-        walkSheet = new Texture(Gdx.files.internal("bob_run.png"));
-        idleSheet = new Texture(Gdx.files.internal("bob_idle.png"));
-        npcAlmetSheet = new Texture(Gdx.files.internal("almet-stop.png"));
+        walkSheet = new Texture(Gdx.files.internal("sprite/bob_run.png"));
+        idleSheet = new Texture(Gdx.files.internal("sprite/bob_idle.png"));
+        npcAlmetSheet = new Texture(Gdx.files.internal("sprite/almet-stop.png"));
+        npcArkaTexture = new Texture(Gdx.files.internal("sprite/arka.png"));
+        npcAryaTexture = new Texture(Gdx.files.internal("sprite/arya.png"));
 
         walkSheet.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         idleSheet.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         npcAlmetSheet.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        npcArkaTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        npcAryaTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
 
         int frameWidth = 16;
         int frameHeight = 32;
@@ -142,6 +188,160 @@ public class GameScreen implements Screen {
         this.uiStage = new Stage(new ScreenViewport());
         this.skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
         this.dbManager = new DatabaseManager();
+
+        this.dialogLabel = new Label("", skin, "white");
+        this.dialogLabel.setWrap(true);
+        this.dialogLabel.setAlignment(Align.topLeft);
+        this.dialogLabel.setVisible(false);
+        this.uiStage.addActor(dialogLabel);
+
+        // Initialize textures for buttons
+        pauseNormalTex = new Texture(Gdx.files.internal("btn/button-pause-normal.png"));
+        pauseHoverTex = new Texture(Gdx.files.internal("btn/button-pause-hover.png"));
+        resumeNormalTex = new Texture(Gdx.files.internal("btn/button-resume-normal.png"));
+        resumeHoverTex = new Texture(Gdx.files.internal("btn/button-resume-hover.png"));
+        settingNormalTex = new Texture(Gdx.files.internal("btn/button-setting-normal.png"));
+        settingHoverTex = new Texture(Gdx.files.internal("btn/button-setting-hover.png"));
+        backMenuNormalTex = new Texture(Gdx.files.internal("btn/button-backmenu-normal.png"));
+        backMenuHoverTex = new Texture(Gdx.files.internal("btn/button-backmenu-hover.png"));
+
+        // Set filters
+        pauseNormalTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        pauseHoverTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        resumeNormalTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        resumeHoverTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        settingNormalTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        settingHoverTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        backMenuNormalTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        backMenuHoverTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+
+        // Load UI Sounds
+        hoverSound = Gdx.audio.newSound(Gdx.files.internal("hover.ogg"));
+        clickSound = Gdx.audio.newSound(Gdx.files.internal("click.ogg"));
+
+        // Setup Pause Button (Top-Right)
+        TextureRegionDrawable pauseNormalDrawable = new TextureRegionDrawable(new TextureRegion(pauseNormalTex));
+        TextureRegionDrawable pauseHoverDrawable = new TextureRegionDrawable(new TextureRegion(pauseHoverTex));
+        ImageButton.ImageButtonStyle pauseStyle = new ImageButton.ImageButtonStyle();
+        pauseStyle.imageUp = pauseNormalDrawable;
+        pauseStyle.imageOver = pauseHoverDrawable;
+
+        pauseButton = new ImageButton(pauseStyle);
+        pauseButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                clickSound.play(1.0f);
+                isPaused = true;
+                pauseButton.setVisible(false);
+                pauseMenuTable.setVisible(true);
+
+                // Stop running sound immediately if playing
+                if (runSoundId != -1) {
+                    runSound.stop(runSoundId);
+                    runSoundId = -1;
+                }
+            }
+
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                super.enter(event, x, y, pointer, fromActor);
+                if (pointer == -1) {
+                    hoverSound.play(1.0f);
+                }
+            }
+        });
+
+        Table pauseButtonTable = new Table();
+        pauseButtonTable.setFillParent(true);
+        pauseButtonTable.top().right().pad(10);
+        pauseButtonTable.add(pauseButton).size(80, 80);
+        uiStage.addActor(pauseButtonTable);
+
+        // Setup Pause Menu (Center)
+        TextureRegionDrawable resumeNormalDrawable = new TextureRegionDrawable(new TextureRegion(resumeNormalTex));
+        TextureRegionDrawable resumeHoverDrawable = new TextureRegionDrawable(new TextureRegion(resumeHoverTex));
+        ImageButton.ImageButtonStyle resumeStyle = new ImageButton.ImageButtonStyle();
+        resumeStyle.imageUp = resumeNormalDrawable;
+        resumeStyle.imageOver = resumeHoverDrawable;
+
+        resumeButton = new ImageButton(resumeStyle);
+        resumeButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                clickSound.play(1.0f);
+                isPaused = false;
+                pauseButton.setVisible(true);
+                pauseMenuTable.setVisible(false);
+            }
+
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                super.enter(event, x, y, pointer, fromActor);
+                if (pointer == -1) {
+                    hoverSound.play(1.0f);
+                }
+            }
+        });
+
+        TextureRegionDrawable settingNormalDrawable = new TextureRegionDrawable(new TextureRegion(settingNormalTex));
+        TextureRegionDrawable settingHoverDrawable = new TextureRegionDrawable(new TextureRegion(settingHoverTex));
+        ImageButton.ImageButtonStyle settingStyle = new ImageButton.ImageButtonStyle();
+        settingStyle.imageUp = settingNormalDrawable;
+        settingStyle.imageOver = settingHoverDrawable;
+
+        settingButton = new ImageButton(settingStyle);
+        settingButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                clickSound.play(1.0f);
+            }
+
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                super.enter(event, x, y, pointer, fromActor);
+                if (pointer == -1) {
+                    hoverSound.play(1.0f);
+                }
+            }
+        });
+
+        TextureRegionDrawable backMenuNormalDrawable = new TextureRegionDrawable(new TextureRegion(backMenuNormalTex));
+        TextureRegionDrawable backMenuHoverDrawable = new TextureRegionDrawable(new TextureRegion(backMenuHoverTex));
+        ImageButton.ImageButtonStyle backMenuStyle = new ImageButton.ImageButtonStyle();
+        backMenuStyle.imageUp = backMenuNormalDrawable;
+        backMenuStyle.imageOver = backMenuHoverDrawable;
+
+        backMenuButton = new ImageButton(backMenuStyle);
+        backMenuButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                clickSound.play(1.0f);
+                isPaused = false;
+                game.setScreen(new MainMenuScreen(game));
+            }
+
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                super.enter(event, x, y, pointer, fromActor);
+                if (pointer == -1) {
+                    hoverSound.play(1.0f);
+                }
+            }
+        });
+
+        pauseTitleTex = new Texture(Gdx.files.internal("art-title.png"));
+        pauseTitleTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        Image pauseTitleImage = new Image(pauseTitleTex);
+
+        pauseMenuTable = new Table();
+        pauseMenuTable.setFillParent(true);
+        pauseMenuTable.center();
+        pauseMenuTable.add(pauseTitleImage).size(450, 300).padBottom(15).row();
+        pauseMenuTable.add(resumeButton).size(270, 104).padBottom(15).row();
+        pauseMenuTable.add(settingButton).size(270, 104).padBottom(15).row();
+        pauseMenuTable.add(backMenuButton).size(270, 104);
+        pauseMenuTable.setVisible(false); // Hidden by default
+        uiStage.addActor(pauseMenuTable);
     }
 
     private Animation<TextureRegion> createHorizontalAnimation(TextureRegion[][] tmp, int startCol) {
@@ -157,10 +357,10 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        if (!quizActive && !showCustomDialog) {
+        if (!quizActive && !showCustomDialog && !isPaused) {
             handleInput(delta);
             update(delta);
-        } else if (showCustomDialog) {
+        } else if (showCustomDialog && !isPaused) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
                 showCustomDialog = false;
             }
@@ -203,25 +403,51 @@ public class GameScreen implements Screen {
         TextureRegion almetFrame = almetAnim.getKeyFrame(stateTime, true);
         game.batch.draw(almetFrame, npcAlmetPos.x, npcAlmetPos.y, 16, 32);
 
+        // Render Arka and Arya NPCs
+        game.batch.draw(npcArkaTexture, npcArkaPos.x, npcArkaPos.y, 16, 32);
+        game.batch.draw(npcAryaTexture, npcAryaPos.x, npcAryaPos.y, 16, 32);
+
         TextureRegion currentFrame = currentAnimation.getKeyFrame(stateTime, true);
         game.batch.draw(currentFrame, playerPos.x, playerPos.y, 16, 32);
         game.batch.end();
 
-        uiStage.act(delta);
-        uiStage.draw();
-
         if (showCustomDialog) {
-            game.batch.setProjectionMatrix(uiStage.getCamera().combined);
-            game.batch.begin();
             float screenWidth = Gdx.graphics.getWidth();
             float screenHeight = Gdx.graphics.getHeight();
             float dialogWidth = screenWidth * 0.9f;
             float dialogHeight = (dialogWidth / dialogBoxTexture.getWidth()) * dialogBoxTexture.getHeight();
             float x = (screenWidth - dialogWidth) / 2;
             float y = 20;
+
+            // Render dialog box texture using the UI projection matrix
+            game.batch.setProjectionMatrix(uiStage.getCamera().combined);
+            game.batch.begin();
             game.batch.draw(dialogBoxTexture, x, y, dialogWidth, dialogHeight);
             game.batch.end();
+
+            // Align the dialog label text dynamically
+            dialogLabel.setPosition(x + 40, y + 25);
+            dialogLabel.setSize(dialogWidth - 80, dialogHeight - 50);
+            dialogLabel.setVisible(true);
+        } else {
+            dialogLabel.setVisible(false);
         }
+
+
+
+        // Draw pause dim overlay
+        if (isPaused) {
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(0, 0, 0, 0.5f); // 50% opacity black
+            shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            shapeRenderer.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+        }
+
+        uiStage.act(delta);
+        uiStage.draw();
 
         if (fadeAlpha > 0) {
             fadeAlpha -= delta * fadeSpeed;
@@ -260,6 +486,7 @@ public class GameScreen implements Screen {
     }
 
     private void handleInput(float delta) {
+        if (isPaused) return;
         if (isMoving) return;
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
@@ -308,8 +535,21 @@ public class GameScreen implements Screen {
     }
 
     private void checkInteraction() {
-        float distance = playerPos.dst(npcPos);
-        if (distance <= TILE_SIZE * 1.5f) {
+        if (playerPos.dst(npcPos) <= TILE_SIZE * 1.5f) {
+            currentDialogText = "Adam: Halo! Selamat datang di COMPS to Life. Jelajahi area sekitar untuk menemukan NPC lainnya!";
+            dialogLabel.setText(currentDialogText);
+            showCustomDialog = true;
+        } else if (playerPos.dst(npcAlmetPos) <= TILE_SIZE * 1.5f) {
+            currentDialogText = "Almet: Halo! Saya sedang belajar untuk ujian besok. Semoga harimu menyenangkan!";
+            dialogLabel.setText(currentDialogText);
+            showCustomDialog = true;
+        } else if (playerPos.dst(npcArkaPos) <= TILE_SIZE * 1.5f) {
+            currentDialogText = "Arka: Hai! Aku Arka. Senang bertemu denganmu di dekat lokasi spawn ini!";
+            dialogLabel.setText(currentDialogText);
+            showCustomDialog = true;
+        } else if (playerPos.dst(npcAryaPos) <= TILE_SIZE * 1.5f) {
+            currentDialogText = "Arya: Halo, kawan! Aku Arya. Selamat berpetualang di dunia COMPS to Life!";
+            dialogLabel.setText(currentDialogText);
             showCustomDialog = true;
         }
     }
@@ -328,6 +568,13 @@ public class GameScreen implements Screen {
     }
 
     private void update(float delta) {
+        if (isPaused) {
+            if (runSoundId != -1) {
+                runSound.stop(runSoundId);
+                runSoundId = -1;
+            }
+            return;
+        }
         if (isMoving) {
             // Play running sound if not already playing
             if (runSoundId == -1) {
@@ -379,11 +626,27 @@ public class GameScreen implements Screen {
         if (walkSheet != null) walkSheet.dispose();
         if (idleSheet != null) idleSheet.dispose();
         if (npcAlmetSheet != null) npcAlmetSheet.dispose();
+        if (npcArkaTexture != null) npcArkaTexture.dispose();
+        if (npcAryaTexture != null) npcAryaTexture.dispose();
         if (map != null) map.dispose();
         if (mapRenderer != null) mapRenderer.dispose();
         if (shapeRenderer != null) shapeRenderer.dispose();
         if (dialogBoxTexture != null) dialogBoxTexture.dispose();
         if (runSound != null) runSound.dispose();
+
+        // Dispose pause menu resources
+        if (pauseNormalTex != null) pauseNormalTex.dispose();
+        if (pauseHoverTex != null) pauseHoverTex.dispose();
+        if (resumeNormalTex != null) resumeNormalTex.dispose();
+        if (resumeHoverTex != null) resumeHoverTex.dispose();
+        if (settingNormalTex != null) settingNormalTex.dispose();
+        if (settingHoverTex != null) settingHoverTex.dispose();
+        if (backMenuNormalTex != null) backMenuNormalTex.dispose();
+        if (backMenuHoverTex != null) backMenuHoverTex.dispose();
+        if (pauseTitleTex != null) pauseTitleTex.dispose();
+        if (hoverSound != null) hoverSound.dispose();
+        if (clickSound != null) clickSound.dispose();
+
         uiStage.dispose();
         skin.dispose();
     }

@@ -50,18 +50,18 @@ public class MainMenuScreen implements Screen {
         this.shapeRenderer = new ShapeRenderer();
 
         // Load textures
-        backgroundTexture = new Texture(Gdx.files.internal("background-screen.png"));
-        startNormal = new Texture(Gdx.files.internal("button-start-normal.png"));
-        startHover = new Texture(Gdx.files.internal("button-start-hover.png"));
-        quitNormal = new Texture(Gdx.files.internal("button-quit-normal.png"));
-        quitHover = new Texture(Gdx.files.internal("button-quit-hover.png"));
+        backgroundTexture = new Texture(Gdx.files.internal("scene/background-screen.png"));
+        startNormal = new Texture(Gdx.files.internal("btn/button-start-normal.png"));
+        startHover = new Texture(Gdx.files.internal("btn/button-start-hover.png"));
+        quitNormal = new Texture(Gdx.files.internal("btn/button-quit-normal.png"));
+        quitHover = new Texture(Gdx.files.internal("btn/button-quit-hover.png"));
 
         // Load sounds
         hoverSound = Gdx.audio.newSound(Gdx.files.internal("hover.ogg"));
         clickSound = Gdx.audio.newSound(Gdx.files.internal("click.ogg"));
 
         // Load and play music
-        backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("mainmenu-music.ogg"));
+        backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("music/mainmenu-music.ogg"));
         backgroundMusic.setLooping(true);
         backgroundMusic.setVolume(1.0f);
         backgroundMusic.play();
@@ -73,12 +73,12 @@ public class MainMenuScreen implements Screen {
 
         // Debug and Load Music
         if (backgroundMusic == null) {
-            boolean exists = Gdx.files.internal("mainmenu-music.ogg").exists();
-            System.out.println("Checking mainmenu-music.ogg: " + (exists ? "FOUND" : "NOT FOUND"));
+            boolean exists = Gdx.files.internal("music/mainmenu-music.ogg").exists();
+            System.out.println("Checking music/mainmenu-music.ogg: " + (exists ? "FOUND" : "NOT FOUND"));
             
             if (exists) {
                 try {
-                    backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("mainmenu-music.ogg"));
+                    backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("music/mainmenu-music.ogg"));
                     backgroundMusic.setLooping(true);
                     backgroundMusic.setVolume(1.0f);
                     backgroundMusic.play();
@@ -178,7 +178,7 @@ public class MainMenuScreen implements Screen {
             fadeAlpha += delta * fadeSpeed;
             if (fadeAlpha >= 1) {
                 fadeAlpha = 1;
-                game.setScreen(new GameScreen(game, "Player"));
+                game.setScreen(new HasilSnbtScreen(game));
             }
         }
 
