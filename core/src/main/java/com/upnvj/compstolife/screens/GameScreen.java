@@ -24,6 +24,11 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.upnvj.compstolife.CompsGame;
 import com.upnvj.compstolife.database.DatabaseManager;
 import com.upnvj.compstolife.entities.Player;
+<<<<<<< HEAD
+=======
+import java.util.List;
+import java.util.ArrayList;
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
 
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -43,6 +48,10 @@ public class GameScreen implements Screen {
     private Vector2 targetPos;
     private float moveSpeed = 120f;
     private final float TILE_SIZE = 16f;
+<<<<<<< HEAD
+=======
+    private float playerOffsetX = 0f; // Gunakan ini untuk menggeser posisi horizontal karakter jika kurang pas di tengah tile (misal: 4f, -4f, 8f, -8f)
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
 
     private TiledMap map;
     private OrthogonalTiledMapRenderer mapRenderer;
@@ -82,6 +91,12 @@ public class GameScreen implements Screen {
     private Texture npcArkaTexture;
     private Texture npcAryaTexture;
 
+<<<<<<< HEAD
+=======
+    // Extra NPCs
+    private List<GameNPC> extraNpcs;
+
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
     private Texture dialogBoxTexture;
     private Label dialogLabel;
     private String currentDialogText = "";
@@ -103,7 +118,25 @@ public class GameScreen implements Screen {
     private Sound hoverSound;
     private Sound clickSound;
 
+<<<<<<< HEAD
 
+=======
+    // Quiz components
+    private Table quizContainerTable;
+    private Table quizTable;
+    private Texture quizBgTex;
+    private Texture qzA_NormalTex, qzA_HoverTex;
+    private Texture qzB_NormalTex, qzB_HoverTex;
+    private Texture qzC_NormalTex, qzC_HoverTex;
+    private ImageButton qzButtonA, qzButtonB, qzButtonC;
+    private Label quizQuestionLabel;
+    private Label quizOptionALabel;
+    private Label quizOptionBLabel;
+    private Label quizOptionCLabel;
+    private boolean quizAnswered = false;
+    private boolean quizSuccess = false;
+    private Label coordLabel;
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
 
     public GameScreen(CompsGame game, String username) {
         this.game = game;
@@ -111,23 +144,49 @@ public class GameScreen implements Screen {
         this.camera = new OrthographicCamera();
         this.shapeRenderer = new ShapeRenderer();
 
+<<<<<<< HEAD
         map = new TmxMapLoader().load("map/map.tmx");
+=======
+        map = new TmxMapLoader().load("map/map-upnvj.tmx");
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
         mapRenderer = new OrthogonalTiledMapRenderer(map, game.batch);
 
 
         this.playerPos = new Vector2(46 * TILE_SIZE, 4 * TILE_SIZE);
         this.targetPos = new Vector2(playerPos);
 
+<<<<<<< HEAD
         // NPC Adam at (47,64)
         this.npcPos = new Vector2(47 * TILE_SIZE, 64 * TILE_SIZE);
         // NPC Almet 2 tiles above Adam (47,66)
         this.npcAlmetPos = new Vector2(47 * TILE_SIZE, 66 * TILE_SIZE);
+=======
+        // NPC Adam at (48,63) - adjusted to passable tile
+        this.npcPos = new Vector2(48 * TILE_SIZE, 63 * TILE_SIZE);
+        // NPC Almet at (48,65) - adjusted to passable tile
+        this.npcAlmetPos = new Vector2(48 * TILE_SIZE, 65 * TILE_SIZE);
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
 
         // NPC Arka diagonal-left of spawn (45,15)
         this.npcArkaPos = new Vector2(45 * TILE_SIZE, 15 * TILE_SIZE);
         // NPC Arya diagonal-right of spawn (47,15)
         this.npcAryaPos = new Vector2(47 * TILE_SIZE, 15 * TILE_SIZE);
 
+<<<<<<< HEAD
+=======
+        // Initialize extra NPCs
+        this.extraNpcs = new ArrayList<>();
+        this.extraNpcs.add(new GameNPC("Ayu", 43f, 20f, "sprite/ayu.png", "Ayu: Halo! Aku Ayu. Jangan lupa untuk mengerjakan tugas kuliahmu tepat waktu ya!", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Nadhifa", 48f, 20f, "sprite/nadhifa.png", "Nadhifa: Hai! Aku Nadhifa. Selamat datang di Fakultas Ilmu Komputer!", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Nadia", 44f, 30f, "sprite/nadia.png", "Nadia: Halo! Aku Nadia. Senang sekali melihatmu bersemangat menjelajahi kampus ini!", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Pak Hendra", 48f, 30f, "sprite/pak-hendra.png", "Pak Hendra: Selamat pagi mahasiswa sekalian. Ingat, kegagalan hari ini adalah awal dari kesuksesan!", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Reyhan", 44f, 40f, "sprite/reyhan.png", "Reyhan: Hei! Aku Reyhan. Sudahkah kamu memeriksa jadwal kuliah hari ini?", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Rizky", 48f, 40f, "sprite/rizky.png", "Rizky: Halo bro! Aku Rizky. Jangan lupa minum air putih yang cukup ya kalau sedang coding.", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Salsa", 44f, 50f, "sprite/salsa.png", "Salsa: Hai! Aku Salsa. Semoga harimu menyenangkan dan perkuliahanmu berjalan lancar!", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Tasya", 48f, 50f, "sprite/tasya.png", "Tasya: Halo! Aku Tasya. Perpustakaan ada di dekat sini, belajarlah dengan rajin!", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Zaki", 42f, 55f, "sprite/zaki.png", "Zaki: Yo! Aku Zaki. Main game boleh saja, tapi jangan sampai melupakan tugas utama kita sebagai mahasiswa.", TILE_SIZE));
+
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
         this.dialogBoxTexture = new Texture(Gdx.files.internal("dialog/dialog-box.png"));
 
         // Load Sound
@@ -257,6 +316,17 @@ public class GameScreen implements Screen {
         pauseButtonTable.add(pauseButton).size(80, 80);
         uiStage.addActor(pauseButtonTable);
 
+<<<<<<< HEAD
+=======
+        // Setup Coordinate Indicator (Top-Left)
+        Table coordTable = new Table();
+        coordTable.setFillParent(true);
+        coordTable.top().left().pad(20);
+        coordLabel = new Label("X: 0, Y: 0", skin, "white");
+        coordTable.add(coordLabel);
+        uiStage.addActor(coordTable);
+
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
         // Setup Pause Menu (Center)
         TextureRegionDrawable resumeNormalDrawable = new TextureRegionDrawable(new TextureRegion(resumeNormalTex));
         TextureRegionDrawable resumeHoverDrawable = new TextureRegionDrawable(new TextureRegion(resumeHoverTex));
@@ -342,6 +412,121 @@ public class GameScreen implements Screen {
         pauseMenuTable.add(backMenuButton).size(270, 104);
         pauseMenuTable.setVisible(false); // Hidden by default
         uiStage.addActor(pauseMenuTable);
+<<<<<<< HEAD
+=======
+
+        // Initialize Quiz Textures
+        quizBgTex = new Texture(Gdx.files.internal("quiz/qz-example.png"));
+        qzA_NormalTex = new Texture(Gdx.files.internal("quiz/qz-button-A-normal.png"));
+        qzA_HoverTex = new Texture(Gdx.files.internal("quiz/qz-button-A-hover.png"));
+        qzB_NormalTex = new Texture(Gdx.files.internal("quiz/qz-button-B-normal.png"));
+        qzB_HoverTex = new Texture(Gdx.files.internal("quiz/qz-button-B-hover.png"));
+        qzC_NormalTex = new Texture(Gdx.files.internal("quiz/qz-button-C-normal.png"));
+        qzC_HoverTex = new Texture(Gdx.files.internal("quiz/qz-button-C-hover.png"));
+
+        quizBgTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        qzA_NormalTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        qzA_HoverTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        qzB_NormalTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        qzB_HoverTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        qzC_NormalTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        qzC_HoverTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+
+        // Initialize Quiz Labels
+        quizQuestionLabel = new Label("Manakah yang merupakan komponen utama CPU?", skin, "white");
+        quizQuestionLabel.setWrap(true);
+        quizQuestionLabel.setAlignment(Align.center);
+
+        quizOptionALabel = new Label("Register, ALU, dan Control Unit", skin, "white");
+        quizOptionALabel.setWrap(true);
+        quizOptionALabel.setAlignment(Align.left);
+
+        quizOptionBLabel = new Label("RAM, ROM, dan Harddisk", skin, "white");
+        quizOptionBLabel.setWrap(true);
+        quizOptionBLabel.setAlignment(Align.left);
+
+        quizOptionCLabel = new Label("Monitor, Keyboard, dan Mouse", skin, "white");
+        quizOptionCLabel.setWrap(true);
+        quizOptionCLabel.setAlignment(Align.left);
+
+        // Initialize Quiz Buttons
+        TextureRegionDrawable drawableANormal = new TextureRegionDrawable(new TextureRegion(qzA_NormalTex));
+        TextureRegionDrawable drawableAHover = new TextureRegionDrawable(new TextureRegion(qzA_HoverTex));
+        ImageButton.ImageButtonStyle styleA = new ImageButton.ImageButtonStyle();
+        styleA.imageUp = drawableANormal;
+        styleA.imageOver = drawableAHover;
+        qzButtonA = new ImageButton(styleA);
+
+        TextureRegionDrawable drawableBNormal = new TextureRegionDrawable(new TextureRegion(qzB_NormalTex));
+        TextureRegionDrawable drawableBHover = new TextureRegionDrawable(new TextureRegion(qzB_HoverTex));
+        ImageButton.ImageButtonStyle styleB = new ImageButton.ImageButtonStyle();
+        styleB.imageUp = drawableBNormal;
+        styleB.imageOver = drawableBHover;
+        qzButtonB = new ImageButton(styleB);
+
+        TextureRegionDrawable drawableCNormal = new TextureRegionDrawable(new TextureRegion(qzC_NormalTex));
+        TextureRegionDrawable drawableCHover = new TextureRegionDrawable(new TextureRegion(qzC_HoverTex));
+        ImageButton.ImageButtonStyle styleC = new ImageButton.ImageButtonStyle();
+        styleC.imageUp = drawableCNormal;
+        styleC.imageOver = drawableCHover;
+        qzButtonC = new ImageButton(styleC);
+
+        // Add Listeners to Buttons
+        qzButtonA.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                handleQuizAnswer('A');
+            }
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                super.enter(event, x, y, pointer, fromActor);
+                if (pointer == -1) {
+                    hoverSound.play(1.0f);
+                }
+            }
+        });
+
+        qzButtonB.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                handleQuizAnswer('B');
+            }
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                super.enter(event, x, y, pointer, fromActor);
+                if (pointer == -1) {
+                    hoverSound.play(1.0f);
+                }
+            }
+        });
+
+        qzButtonC.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                handleQuizAnswer('C');
+            }
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                super.enter(event, x, y, pointer, fromActor);
+                if (pointer == -1) {
+                    hoverSound.play(1.0f);
+                }
+            }
+        });
+
+        // Initialize Table Containers
+        quizContainerTable = new Table();
+        quizContainerTable.setFillParent(true);
+        quizContainerTable.center();
+        quizContainerTable.setVisible(false);
+
+        quizTable = new Table();
+        quizContainerTable.add(quizTable);
+        uiStage.addActor(quizContainerTable);
+
+        // Build the table layout initially
+        rebuildQuizTable(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
     }
 
     private Animation<TextureRegion> createHorizontalAnimation(TextureRegion[][] tmp, int startCol) {
@@ -357,6 +542,15 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
+<<<<<<< HEAD
+=======
+        if (coordLabel != null) {
+            int tileX = (int) (playerPos.x / TILE_SIZE);
+            int tileY = (int) (playerPos.y / TILE_SIZE);
+            coordLabel.setText("X: " + tileX + ", Y: " + tileY);
+        }
+
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
         if (!quizActive && !showCustomDialog && !isPaused) {
             handleInput(delta);
             update(delta);
@@ -364,6 +558,19 @@ public class GameScreen implements Screen {
             if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
                 showCustomDialog = false;
             }
+<<<<<<< HEAD
+=======
+        } else if (quizActive && !isPaused) {
+            if (quizAnswered) {
+                if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+                    if (quizSuccess) {
+                        closeQuiz();
+                    } else {
+                        resetQuiz();
+                    }
+                }
+            }
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
         }
 
         Gdx.gl.glClearColor(0, 0, 0, 1);
@@ -407,8 +614,20 @@ public class GameScreen implements Screen {
         game.batch.draw(npcArkaTexture, npcArkaPos.x, npcArkaPos.y, 16, 32);
         game.batch.draw(npcAryaTexture, npcAryaPos.x, npcAryaPos.y, 16, 32);
 
+<<<<<<< HEAD
         TextureRegion currentFrame = currentAnimation.getKeyFrame(stateTime, true);
         game.batch.draw(currentFrame, playerPos.x, playerPos.y, 16, 32);
+=======
+        // Render extra NPCs
+        if (extraNpcs != null) {
+            for (GameNPC npc : extraNpcs) {
+                npc.draw(game.batch);
+            }
+        }
+
+        TextureRegion currentFrame = currentAnimation.getKeyFrame(stateTime, true);
+        game.batch.draw(currentFrame, playerPos.x + playerOffsetX, playerPos.y, 16, 32);
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
         game.batch.end();
 
         if (showCustomDialog) {
@@ -436,9 +655,16 @@ public class GameScreen implements Screen {
 
 
         // Draw pause dim overlay
+<<<<<<< HEAD
         if (isPaused) {
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+=======
+        if (isPaused || quizActive) {
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapeRenderer.setProjectionMatrix(uiStage.getCamera().combined);
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             shapeRenderer.setColor(0, 0, 0, 0.5f); // 50% opacity black
             shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -455,6 +681,10 @@ public class GameScreen implements Screen {
 
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+<<<<<<< HEAD
+=======
+            shapeRenderer.setProjectionMatrix(uiStage.getCamera().combined);
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             shapeRenderer.setColor(0, 0, 0, fadeAlpha);
             shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -540,9 +770,13 @@ public class GameScreen implements Screen {
             dialogLabel.setText(currentDialogText);
             showCustomDialog = true;
         } else if (playerPos.dst(npcAlmetPos) <= TILE_SIZE * 1.5f) {
+<<<<<<< HEAD
             currentDialogText = "Almet: Halo! Saya sedang belajar untuk ujian besok. Semoga harimu menyenangkan!";
             dialogLabel.setText(currentDialogText);
             showCustomDialog = true;
+=======
+            openQuiz();
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
         } else if (playerPos.dst(npcArkaPos) <= TILE_SIZE * 1.5f) {
             currentDialogText = "Arka: Hai! Aku Arka. Senang bertemu denganmu di dekat lokasi spawn ini!";
             dialogLabel.setText(currentDialogText);
@@ -551,12 +785,25 @@ public class GameScreen implements Screen {
             currentDialogText = "Arya: Halo, kawan! Aku Arya. Selamat berpetualang di dunia COMPS to Life!";
             dialogLabel.setText(currentDialogText);
             showCustomDialog = true;
+<<<<<<< HEAD
+=======
+        } else if (extraNpcs != null) {
+            for (GameNPC npc : extraNpcs) {
+                if (npc.isNearPlayer(playerPos, TILE_SIZE)) {
+                    currentDialogText = npc.getDialogText();
+                    dialogLabel.setText(currentDialogText);
+                    showCustomDialog = true;
+                    break;
+                }
+            }
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
         }
     }
 
     private boolean isCellPassable(float x, float y) {
         int cellX = (int) (x / TILE_SIZE);
         int cellY = (int) (y / TILE_SIZE);
+<<<<<<< HEAD
         TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get("Tile Layer 1");
         if (layer == null) return true;
         if (cellX < 0 || cellX >= layer.getWidth() || cellY < 0 || cellY >= layer.getHeight()) return false;
@@ -564,6 +811,15 @@ public class GameScreen implements Screen {
         if (cell == null) return false;
         Object blocked = cell.getTile().getProperties().get("blocked");
         if (blocked != null) return false;
+=======
+        TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get("Ground");
+        TiledMapTileLayer blockLayer = (TiledMapTileLayer) map.getLayers().get("Block");
+        if (layer == null) return true;
+        if (cellX < 0 || cellX >= layer.getWidth() || cellY < 0 || cellY >= layer.getHeight()) return false;
+
+        if (blockLayer != null && blockLayer.getCell(cellX, cellY) != null) return false;
+        if (layer.getCell(cellX, cellY) == null) return false;
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
         return true;
     }
 
@@ -595,7 +851,11 @@ public class GameScreen implements Screen {
                 runSoundId = -1;
             }
         }
+<<<<<<< HEAD
         camera.position.set(playerPos.x + 16, playerPos.y + 16, 0);
+=======
+        camera.position.set(playerPos.x + 8 + playerOffsetX, playerPos.y + 16, 0);
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
     }
 
     @Override
@@ -604,6 +864,10 @@ public class GameScreen implements Screen {
         camera.viewportHeight = 400f * height / width;
         camera.update();
         uiStage.getViewport().update(width, height, true);
+<<<<<<< HEAD
+=======
+        rebuildQuizTable(width, height);
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
     }
 
     @Override
@@ -628,6 +892,14 @@ public class GameScreen implements Screen {
         if (npcAlmetSheet != null) npcAlmetSheet.dispose();
         if (npcArkaTexture != null) npcArkaTexture.dispose();
         if (npcAryaTexture != null) npcAryaTexture.dispose();
+<<<<<<< HEAD
+=======
+        if (extraNpcs != null) {
+            for (GameNPC npc : extraNpcs) {
+                npc.dispose();
+            }
+        }
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
         if (map != null) map.dispose();
         if (mapRenderer != null) mapRenderer.dispose();
         if (shapeRenderer != null) shapeRenderer.dispose();
@@ -647,7 +919,129 @@ public class GameScreen implements Screen {
         if (hoverSound != null) hoverSound.dispose();
         if (clickSound != null) clickSound.dispose();
 
+<<<<<<< HEAD
         uiStage.dispose();
         skin.dispose();
     }
+=======
+        // Dispose quiz resources
+        if (quizBgTex != null) quizBgTex.dispose();
+        if (qzA_NormalTex != null) qzA_NormalTex.dispose();
+        if (qzA_HoverTex != null) qzA_HoverTex.dispose();
+        if (qzB_NormalTex != null) qzB_NormalTex.dispose();
+        if (qzB_HoverTex != null) qzB_HoverTex.dispose();
+        if (qzC_NormalTex != null) qzC_NormalTex.dispose();
+        if (qzC_HoverTex != null) qzC_HoverTex.dispose();
+
+        uiStage.dispose();
+        skin.dispose();
+    }
+
+    private void openQuiz() {
+        quizActive = true;
+        quizContainerTable.setVisible(true);
+        pauseButton.setVisible(false);
+        resetQuiz();
+    }
+
+    private void closeQuiz() {
+        quizActive = false;
+        quizContainerTable.setVisible(false);
+        pauseButton.setVisible(true);
+    }
+
+    private void handleQuizAnswer(char answer) {
+        quizAnswered = true;
+        clickSound.play(1.0f);
+        if (answer == 'A') {
+            quizSuccess = true;
+            quizQuestionLabel.setText("Jawaban Benar! Register, ALU, dan Control Unit\nadalah komponen utama dari CPU.\n\n(Tekan ENTER untuk kembali)");
+        } else {
+            quizSuccess = false;
+            quizQuestionLabel.setText("Jawaban Salah! Pilihan " + answer + " bukan komponen utama CPU.\n\n(Tekan ENTER untuk mencoba lagi)");
+        }
+        rebuildQuizTable(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+    }
+
+    private void resetQuiz() {
+        quizQuestionLabel.setText("Manakah yang merupakan komponen utama CPU?");
+        quizAnswered = false;
+        quizSuccess = false;
+        rebuildQuizTable(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+    }
+
+    private void rebuildQuizTable(float width, float height) {
+        if (quizTable == null || quizBgTex == null) return;
+
+        quizTable.clear();
+        quizTable.setBackground(new TextureRegionDrawable(new TextureRegion(quizBgTex)));
+
+        // Calculate dynamic dimensions
+        float quizWidth = width * 0.75f;
+        float quizHeight = (quizWidth / quizBgTex.getWidth()) * quizBgTex.getHeight();
+        if (quizHeight > height * 0.75f) {
+            quizHeight = height * 0.75f;
+            quizWidth = (quizHeight / quizBgTex.getHeight()) * quizBgTex.getWidth();
+        }
+
+        quizContainerTable.clear();
+        quizContainerTable.add(quizTable).size(quizWidth, quizHeight);
+
+        // Adjust padding inside the quiz box so text/buttons don't overlap borders
+        quizTable.pad(quizHeight * 0.15f, quizWidth * 0.12f, quizHeight * 0.15f, quizWidth * 0.12f);
+
+        // Add Question
+        quizTable.add(quizQuestionLabel).colspan(2).fillX().expandX().padBottom(quizHeight * 0.06f).row();
+
+        if (quizAnswered) {
+            return;
+        }
+
+        float btnWidth = quizWidth * 0.09f;
+        float btnHeight = (btnWidth / qzA_NormalTex.getWidth()) * qzA_NormalTex.getHeight();
+
+        // Option A
+        quizTable.add(qzButtonA).size(btnWidth, btnHeight).padBottom(quizHeight * 0.04f).padRight(quizWidth * 0.03f).left();
+        quizTable.add(quizOptionALabel).padBottom(quizHeight * 0.04f).left().expandX().fillX().row();
+
+        // Option B
+        quizTable.add(qzButtonB).size(btnWidth, btnHeight).padBottom(quizHeight * 0.04f).padRight(quizWidth * 0.03f).left();
+        quizTable.add(quizOptionBLabel).padBottom(quizHeight * 0.04f).left().expandX().fillX().row();
+
+        // Option C
+        quizTable.add(qzButtonC).size(btnWidth, btnHeight).padRight(quizWidth * 0.03f).left();
+        quizTable.add(quizOptionCLabel).left().expandX().fillX();
+    }
+
+    private static class GameNPC {
+        private final String name;
+        private final Vector2 position;
+        private final Texture texture;
+        private final String dialogText;
+
+        public GameNPC(String name, float tileX, float tileY, String texturePath, String dialogText, float tileSize) {
+            this.name = name;
+            this.position = new Vector2(tileX * tileSize, tileY * tileSize);
+            this.texture = new Texture(Gdx.files.internal(texturePath));
+            this.texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+            this.dialogText = dialogText;
+        }
+
+        public void draw(com.badlogic.gdx.graphics.g2d.SpriteBatch batch) {
+            batch.draw(texture, position.x, position.y, 16, 32);
+        }
+
+        public boolean isNearPlayer(Vector2 playerPos, float tileSize) {
+            return playerPos.dst(position) <= tileSize * 1.5f;
+        }
+
+        public String getDialogText() {
+            return dialogText;
+        }
+
+        public void dispose() {
+            if (texture != null) texture.dispose();
+        }
+    }
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
 }

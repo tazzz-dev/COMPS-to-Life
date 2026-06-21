@@ -154,6 +154,10 @@ Thumbs.db
 *#*#
 /.kotlin/
 /assets/assets.txt
+<<<<<<< HEAD
+=======
+/external-asset/
+>>>>>>> 3c58c916d9078716ae45dd648d77d1c0b8fd690f
 
 ## Special cases:
 
