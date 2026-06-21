@@ -45,6 +45,7 @@ public class GameScreen implements Screen {
     private Vector2 targetPos;
     private float moveSpeed = 120f;
     private final float TILE_SIZE = 16f;
+    private float playerOffsetX = 8f; // Gunakan ini untuk menggeser posisi horizontal karakter jika kurang pas di tengah tile (misal: 4f, -4f, 8f, -8f)
 
     private TiledMap map;
     private OrthogonalTiledMapRenderer mapRenderer;
@@ -116,7 +117,7 @@ public class GameScreen implements Screen {
         this.camera = new OrthographicCamera();
         this.shapeRenderer = new ShapeRenderer();
 
-        map = new TmxMapLoader().load("map/map.tmx");
+        map = new TmxMapLoader().load("map/map-upnvj.tmx");
         mapRenderer = new OrthogonalTiledMapRenderer(map, game.batch);
 
 
@@ -432,7 +433,7 @@ public class GameScreen implements Screen {
         }
 
         TextureRegion currentFrame = currentAnimation.getKeyFrame(stateTime, true);
-        game.batch.draw(currentFrame, playerPos.x, playerPos.y, 16, 32);
+        game.batch.draw(currentFrame, playerPos.x + playerOffsetX, playerPos.y, 16, 32);
         game.batch.end();
 
         if (showCustomDialog) {
@@ -630,7 +631,7 @@ public class GameScreen implements Screen {
                 runSoundId = -1;
             }
         }
-        camera.position.set(playerPos.x + 16, playerPos.y + 16, 0);
+        camera.position.set(playerPos.x + 8 + playerOffsetX, playerPos.y + 16, 0);
     }
 
     @Override
