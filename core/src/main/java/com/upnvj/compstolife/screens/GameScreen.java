@@ -171,10 +171,10 @@ public class GameScreen implements Screen {
         this.extraNpcs = new ArrayList<>();
         this.extraNpcs.add(new GameNPC("Ayu", 80f, 115f, "sprite/ayu.png", "Ayu: Halo! Aku Ayu. Jangan lupa untuk mengerjakan tugas kuliahmu tepat waktu ya!", TILE_SIZE, false));
         this.extraNpcs.add(new GameNPC("Nadhifa", 95f, 121f, "sprite/nadhifa.png", "Nadhifa: Hai! Aku Nadhifa. Selamat datang di Fakultas Ilmu Komputer!", TILE_SIZE, false));
-        this.extraNpcs.add(new GameNPC("Nadia", 13f, 14f, "sprite/nadia.png", "Nadia: Halo! Aku Nadia. Senang sekali melihatmu bersemangat menjelajahi kampus ini!", TILE_SIZE, true));
+        this.extraNpcs.add(new GameNPC("Nadia", 14f, 17f, "sprite/nadia.png", "Nadia: Halo! Aku Nadia. Senang sekali melihatmu bersemangat menjelajahi kampus ini!", TILE_SIZE, true));
         this.extraNpcs.add(new GameNPC("Pak Hendra", 45f, 40f, "sprite/pak-hendra.png", "Pak Hendra: Selamat pagi mahasiswa sekalian. Ingat, kegagalan hari ini adalah awal dari kesuksesan!", TILE_SIZE, true));
         this.extraNpcs.add(new GameNPC("Reyhan", 76f, 104f, "sprite/reyhan.png", "Reyhan: Hei! Aku Reyhan. Sudahkah kamu memeriksa jadwal kuliah hari ini?", TILE_SIZE, false));
-        this.extraNpcs.add(new GameNPC("Rizky", 40f, 14f, "sprite/rizky.png", "Rizky: Halo bro! Aku Rizky. Jangan lupa minum air putih yang cukup ya kalau sedang coding.", TILE_SIZE, true));
+        this.extraNpcs.add(new GameNPC("Rizky", 40f, 17f, "sprite/rizky.png", "Rizky: Halo bro! Aku Rizky. Jangan lupa minum air putih yang cukup ya kalau sedang coding.", TILE_SIZE, true));
         this.extraNpcs.add(new GameNPC("Salsa", 42f, 44f, "sprite/salsa.png", "Salsa: Hai! Aku Salsa. Semoga harimu menyenangkan dan perkuliahanmu berjalan lancar!", TILE_SIZE, true));
         this.extraNpcs.add(new GameNPC("Tasya", 75f, 70f, "sprite/tasya.png", "Tasya: Halo! Aku Tasya. Perpustakaan ada di dekat sini, belajarlah dengan rajin!", TILE_SIZE, false));
         this.extraNpcs.add(new GameNPC("Zaki", 107f, 106f, "sprite/zaki.png", "Zaki: Yo! Aku Zaki. Main game boleh saja, tapi jangan sampai melupakan tugas utama kita sebagai mahasiswa.", TILE_SIZE, false));
@@ -912,7 +912,7 @@ public class GameScreen implements Screen {
             return true;
         } else if ("map/SelasarFIK.tmx".equals(currentMapName)) {
             // Override door/transition coordinates to be passable
-            if (cellX <= 4 && (cellY >= 6 && cellY <= 9)) {
+            if (cellX <= 13 && (cellY >= 19 && cellY <= 21)) {
                 return true;
             }
             TiledMapTileLayer layer1 = (TiledMapTileLayer) map.getLayers().get("Tile Layer 1");
@@ -940,22 +940,22 @@ public class GameScreen implements Screen {
         if ("map/map-upnvj.tmx".equals(currentMapName)) {
             if (tileX == 80) {
                 if (tileY == 136) {
-                    // Spawn at (5, 6)
-                    startMapTransition("map/SelasarFIK.tmx", new Vector2(5 * TILE_SIZE, 6 * TILE_SIZE));
+                    // Spawn at (11, 21)
+                    startMapTransition("map/SelasarFIK.tmx", new Vector2(11 * TILE_SIZE, 21 * TILE_SIZE));
                 } else if (tileY == 137) {
-                    // Spawn at (5, 7)
-                    startMapTransition("map/SelasarFIK.tmx", new Vector2(5 * TILE_SIZE, 7 * TILE_SIZE));
+                    // Spawn at (11, 20)
+                    startMapTransition("map/SelasarFIK.tmx", new Vector2(11 * TILE_SIZE, 20 * TILE_SIZE));
                 } else if (tileY == 138) {
-                    // Spawn at (5, 9)
-                    startMapTransition("map/SelasarFIK.tmx", new Vector2(5 * TILE_SIZE, 9 * TILE_SIZE));
+                    // Spawn at (11, 19)
+                    startMapTransition("map/SelasarFIK.tmx", new Vector2(11 * TILE_SIZE, 19 * TILE_SIZE));
                 }
             }
         } else if ("map/SelasarFIK.tmx".equals(currentMapName)) {
-            // Exit back to UPNVJ map when stepping on the door/entrance tiles (x <= 4, y = 6..9)
-            if (tileX <= 4 && (tileY >= 6 && tileY <= 9)) {
-                if (tileY == 6) {
+            // Exit back to UPNVJ map when stepping on the door/entrance tiles (x <= 10, y = 19..21)
+            if (tileX <= 10 && (tileY >= 19 && tileY <= 21)) {
+                if (tileY == 21) {
                     startMapTransition("map/map-upnvj.tmx", new Vector2(80 * TILE_SIZE, 136 * TILE_SIZE));
-                } else if (tileY == 7) {
+                } else if (tileY == 20) {
                     startMapTransition("map/map-upnvj.tmx", new Vector2(80 * TILE_SIZE, 137 * TILE_SIZE));
                 } else {
                     startMapTransition("map/map-upnvj.tmx", new Vector2(80 * TILE_SIZE, 138 * TILE_SIZE));
