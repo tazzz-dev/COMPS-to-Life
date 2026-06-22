@@ -26,6 +26,8 @@ import com.upnvj.compstolife.database.DatabaseManager;
 import com.upnvj.compstolife.entities.Player;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -70,6 +72,11 @@ public class GameScreen implements Screen {
     // Transition variables
     private float fadeAlpha = 1.0f;
     private float fadeSpeed = 0.5f;
+    private String currentMapName = "map/map-upnvj.tmx";
+    private boolean isTransitioning = false;
+    private boolean fadingOut = false;
+    private String nextMapName = null;
+    private Vector2 nextPlayerPos = new Vector2();
 
     // NPC and Sound properties
     private Vector2 npcPos;
@@ -87,6 +94,18 @@ public class GameScreen implements Screen {
 
     // Extra NPCs
     private List<GameNPC> extraNpcs;
+
+    // Custom NPC Dialogue Flow
+    private Map<String, NpcDialogueFlow> npcDialogueFlows;
+    private DialogueState activeNpcDialog = null;
+    private boolean npcDialogActive = false;
+
+    // UI elements for NPC dialogue
+    private Image npcDialogImage;
+    private Table npcQuizButtonsTable;
+    private ImageButton npcQzButtonA;
+    private ImageButton npcQzButtonB;
+    private ImageButton npcQzButtonC;
 
     private Texture dialogBoxTexture;
     private Label dialogLabel;
@@ -135,7 +154,7 @@ public class GameScreen implements Screen {
         mapRenderer = new OrthogonalTiledMapRenderer(map, game.batch);
 
 
-        this.playerPos = new Vector2(46 * TILE_SIZE, 4 * TILE_SIZE);
+        this.playerPos = new Vector2(79 * TILE_SIZE, 133 * TILE_SIZE);
         this.targetPos = new Vector2(playerPos);
 
         // NPC Adam at (48,63) - adjusted to passable tile
@@ -143,22 +162,22 @@ public class GameScreen implements Screen {
         // NPC Almet at (48,65) - adjusted to passable tile
         this.npcAlmetPos = new Vector2(48 * TILE_SIZE, 65 * TILE_SIZE);
 
-        // NPC Arka diagonal-left of spawn (45,15)
-        this.npcArkaPos = new Vector2(45 * TILE_SIZE, 15 * TILE_SIZE);
-        // NPC Arya diagonal-right of spawn (47,15)
-        this.npcAryaPos = new Vector2(47 * TILE_SIZE, 15 * TILE_SIZE);
+        // NPC Arka at (90, 114)
+        this.npcArkaPos = new Vector2(90 * TILE_SIZE, 114 * TILE_SIZE);
+        // NPC Arya at (80, 132)
+        this.npcAryaPos = new Vector2(80 * TILE_SIZE, 132 * TILE_SIZE);
 
         // Initialize extra NPCs
         this.extraNpcs = new ArrayList<>();
-        this.extraNpcs.add(new GameNPC("Ayu", 43f, 20f, "sprite/ayu.png", "Ayu: Halo! Aku Ayu. Jangan lupa untuk mengerjakan tugas kuliahmu tepat waktu ya!", TILE_SIZE));
-        this.extraNpcs.add(new GameNPC("Nadhifa", 48f, 20f, "sprite/nadhifa.png", "Nadhifa: Hai! Aku Nadhifa. Selamat datang di Fakultas Ilmu Komputer!", TILE_SIZE));
-        this.extraNpcs.add(new GameNPC("Nadia", 44f, 30f, "sprite/nadia.png", "Nadia: Halo! Aku Nadia. Senang sekali melihatmu bersemangat menjelajahi kampus ini!", TILE_SIZE));
-        this.extraNpcs.add(new GameNPC("Pak Hendra", 48f, 30f, "sprite/pak-hendra.png", "Pak Hendra: Selamat pagi mahasiswa sekalian. Ingat, kegagalan hari ini adalah awal dari kesuksesan!", TILE_SIZE));
-        this.extraNpcs.add(new GameNPC("Reyhan", 44f, 40f, "sprite/reyhan.png", "Reyhan: Hei! Aku Reyhan. Sudahkah kamu memeriksa jadwal kuliah hari ini?", TILE_SIZE));
-        this.extraNpcs.add(new GameNPC("Rizky", 48f, 40f, "sprite/rizky.png", "Rizky: Halo bro! Aku Rizky. Jangan lupa minum air putih yang cukup ya kalau sedang coding.", TILE_SIZE));
-        this.extraNpcs.add(new GameNPC("Salsa", 44f, 50f, "sprite/salsa.png", "Salsa: Hai! Aku Salsa. Semoga harimu menyenangkan dan perkuliahanmu berjalan lancar!", TILE_SIZE));
-        this.extraNpcs.add(new GameNPC("Tasya", 48f, 50f, "sprite/tasya.png", "Tasya: Halo! Aku Tasya. Perpustakaan ada di dekat sini, belajarlah dengan rajin!", TILE_SIZE));
-        this.extraNpcs.add(new GameNPC("Zaki", 42f, 55f, "sprite/zaki.png", "Zaki: Yo! Aku Zaki. Main game boleh saja, tapi jangan sampai melupakan tugas utama kita sebagai mahasiswa.", TILE_SIZE));
+        this.extraNpcs.add(new GameNPC("Ayu", 80f, 115f, "sprite/ayu.png", "Ayu: Halo! Aku Ayu. Jangan lupa untuk mengerjakan tugas kuliahmu tepat waktu ya!", TILE_SIZE, false));
+        this.extraNpcs.add(new GameNPC("Nadhifa", 95f, 121f, "sprite/nadhifa.png", "Nadhifa: Hai! Aku Nadhifa. Selamat datang di Fakultas Ilmu Komputer!", TILE_SIZE, false));
+        this.extraNpcs.add(new GameNPC("Nadia", 13f, 14f, "sprite/nadia.png", "Nadia: Halo! Aku Nadia. Senang sekali melihatmu bersemangat menjelajahi kampus ini!", TILE_SIZE, true));
+        this.extraNpcs.add(new GameNPC("Pak Hendra", 45f, 40f, "sprite/pak-hendra.png", "Pak Hendra: Selamat pagi mahasiswa sekalian. Ingat, kegagalan hari ini adalah awal dari kesuksesan!", TILE_SIZE, true));
+        this.extraNpcs.add(new GameNPC("Reyhan", 76f, 104f, "sprite/reyhan.png", "Reyhan: Hei! Aku Reyhan. Sudahkah kamu memeriksa jadwal kuliah hari ini?", TILE_SIZE, false));
+        this.extraNpcs.add(new GameNPC("Rizky", 40f, 14f, "sprite/rizky.png", "Rizky: Halo bro! Aku Rizky. Jangan lupa minum air putih yang cukup ya kalau sedang coding.", TILE_SIZE, true));
+        this.extraNpcs.add(new GameNPC("Salsa", 42f, 44f, "sprite/salsa.png", "Salsa: Hai! Aku Salsa. Semoga harimu menyenangkan dan perkuliahanmu berjalan lancar!", TILE_SIZE, true));
+        this.extraNpcs.add(new GameNPC("Tasya", 75f, 70f, "sprite/tasya.png", "Tasya: Halo! Aku Tasya. Perpustakaan ada di dekat sini, belajarlah dengan rajin!", TILE_SIZE, false));
+        this.extraNpcs.add(new GameNPC("Zaki", 107f, 106f, "sprite/zaki.png", "Zaki: Yo! Aku Zaki. Main game boleh saja, tapi jangan sampai melupakan tugas utama kita sebagai mahasiswa.", TILE_SIZE, false));
 
         this.dialogBoxTexture = new Texture(Gdx.files.internal("dialog/dialog-box.png"));
 
@@ -494,6 +513,79 @@ public class GameScreen implements Screen {
 
         // Build the table layout initially
         rebuildQuizTable(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
+        // Initialize NPC Dialogue Flow
+        initNpcDialogueFlows();
+
+        // NPC dialogue UI components
+        npcDialogImage = new Image();
+
+        TextureRegionDrawable npcDrawableANormal = new TextureRegionDrawable(new TextureRegion(qzA_NormalTex));
+        TextureRegionDrawable npcDrawableAHover = new TextureRegionDrawable(new TextureRegion(qzA_HoverTex));
+        ImageButton.ImageButtonStyle npcStyleA = new ImageButton.ImageButtonStyle();
+        npcStyleA.imageUp = npcDrawableANormal;
+        npcStyleA.imageOver = npcDrawableAHover;
+        npcQzButtonA = new ImageButton(npcStyleA);
+
+        TextureRegionDrawable npcDrawableBNormal = new TextureRegionDrawable(new TextureRegion(qzB_NormalTex));
+        TextureRegionDrawable npcDrawableBHover = new TextureRegionDrawable(new TextureRegion(qzB_HoverTex));
+        ImageButton.ImageButtonStyle npcStyleB = new ImageButton.ImageButtonStyle();
+        npcStyleB.imageUp = npcDrawableBNormal;
+        npcStyleB.imageOver = npcDrawableBHover;
+        npcQzButtonB = new ImageButton(npcStyleB);
+
+        TextureRegionDrawable npcDrawableCNormal = new TextureRegionDrawable(new TextureRegion(qzC_NormalTex));
+        TextureRegionDrawable npcDrawableCHover = new TextureRegionDrawable(new TextureRegion(qzC_HoverTex));
+        ImageButton.ImageButtonStyle npcStyleC = new ImageButton.ImageButtonStyle();
+        npcStyleC.imageUp = npcDrawableCNormal;
+        npcStyleC.imageOver = npcDrawableCHover;
+        npcQzButtonC = new ImageButton(npcStyleC);
+
+        // Add Listeners to NPC Quiz Buttons
+        npcQzButtonA.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                handleNpcQuizAnswer('A');
+            }
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                super.enter(event, x, y, pointer, fromActor);
+                if (pointer == -1) hoverSound.play(1.0f);
+            }
+        });
+
+        npcQzButtonB.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                handleNpcQuizAnswer('B');
+            }
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                super.enter(event, x, y, pointer, fromActor);
+                if (pointer == -1) hoverSound.play(1.0f);
+            }
+        });
+
+        npcQzButtonC.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                handleNpcQuizAnswer('C');
+            }
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                super.enter(event, x, y, pointer, fromActor);
+                if (pointer == -1) hoverSound.play(1.0f);
+            }
+        });
+
+        npcQuizButtonsTable = new Table();
+
+        npcDialogImage.setVisible(false);
+        npcQuizButtonsTable.setVisible(false);
+        uiStage.addActor(npcDialogImage);
+        uiStage.addActor(npcQuizButtonsTable);
+
+        rebuildNpcDialogLayout(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
     }
 
     private Animation<TextureRegion> createHorizontalAnimation(TextureRegion[][] tmp, int startCol) {
@@ -515,12 +607,16 @@ public class GameScreen implements Screen {
             coordLabel.setText("X: " + tileX + ", Y: " + tileY);
         }
 
-        if (!quizActive && !showCustomDialog && !isPaused) {
+        if (!quizActive && !showCustomDialog && !npcDialogActive && !isPaused && !isTransitioning) {
             handleInput(delta);
             update(delta);
         } else if (showCustomDialog && !isPaused) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
                 showCustomDialog = false;
+            }
+        } else if (npcDialogActive && !isPaused) {
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+                advanceNpcDialogueFlow();
             }
         } else if (quizActive && !isPaused) {
             if (quizAnswered) {
@@ -540,7 +636,7 @@ public class GameScreen implements Screen {
         camera.update();
         mapRenderer.setView(camera);
         mapRenderer.render();
-
+        drawMapIndicators();
         drawGrid();
 
         game.batch.begin();
@@ -558,27 +654,42 @@ public class GameScreen implements Screen {
             }
         }
 
-        TextureRegion npcFrame = idleDown.getKeyFrame(stateTime, true);
-        game.batch.draw(npcFrame, npcPos.x, npcPos.y, 16, 32);
+        // Render NPCs based on current map
+        boolean isSelasar = "map/SelasarFIK.tmx".equals(currentMapName);
+        if (!isSelasar) {
+            TextureRegion npcFrame = idleDown.getKeyFrame(stateTime, true);
+            game.batch.draw(npcFrame, npcPos.x, npcPos.y, 16, 32);
 
-        Animation<TextureRegion> almetAnim;
-        switch (almetDirection) {
-            case UP: almetAnim = almetUp; break;
-            case LEFT: almetAnim = almetLeft; break;
-            case RIGHT: almetAnim = almetRight; break;
-            default: almetAnim = almetDown; break;
-        }
-        TextureRegion almetFrame = almetAnim.getKeyFrame(stateTime, true);
-        game.batch.draw(almetFrame, npcAlmetPos.x, npcAlmetPos.y, 16, 32);
+            Animation<TextureRegion> almetAnim;
+            switch (almetDirection) {
+                case UP: almetAnim = almetUp; break;
+                case LEFT: almetAnim = almetLeft; break;
+                case RIGHT: almetAnim = almetRight; break;
+                default: almetAnim = almetDown; break;
+            }
+            TextureRegion almetFrame = almetAnim.getKeyFrame(stateTime, true);
+            game.batch.draw(almetFrame, npcAlmetPos.x, npcAlmetPos.y, 16, 32);
 
-        // Render Arka and Arya NPCs
-        game.batch.draw(npcArkaTexture, npcArkaPos.x, npcArkaPos.y, 16, 32);
-        game.batch.draw(npcAryaTexture, npcAryaPos.x, npcAryaPos.y, 16, 32);
+            // Render Arka and Arya NPCs
+            game.batch.draw(npcArkaTexture, npcArkaPos.x, npcArkaPos.y, 16, 32);
+            game.batch.draw(npcAryaTexture, npcAryaPos.x, npcAryaPos.y, 16, 32);
 
-        // Render extra NPCs
-        if (extraNpcs != null) {
-            for (GameNPC npc : extraNpcs) {
-                npc.draw(game.batch);
+            // Render extra NPCs
+            if (extraNpcs != null) {
+                for (GameNPC npc : extraNpcs) {
+                    if (!npc.isOnSelasar()) {
+                        npc.draw(game.batch);
+                    }
+                }
+            }
+        } else {
+            // Render extra Selasar NPCs
+            if (extraNpcs != null) {
+                for (GameNPC npc : extraNpcs) {
+                    if (npc.isOnSelasar()) {
+                        npc.draw(game.batch);
+                    }
+                }
             }
         }
 
@@ -611,7 +722,7 @@ public class GameScreen implements Screen {
 
 
         // Draw pause dim overlay
-        if (isPaused || quizActive) {
+        if (isPaused || quizActive || npcDialogActive) {
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
             shapeRenderer.setProjectionMatrix(uiStage.getCamera().combined);
@@ -625,7 +736,31 @@ public class GameScreen implements Screen {
         uiStage.act(delta);
         uiStage.draw();
 
-        if (fadeAlpha > 0) {
+        if (isTransitioning) {
+            if (fadingOut) {
+                fadeAlpha += delta * fadeSpeed;
+                if (fadeAlpha >= 1.0f) {
+                    fadeAlpha = 1.0f;
+                    performMapChange();
+                    fadingOut = false;
+                }
+            } else {
+                fadeAlpha -= delta * fadeSpeed;
+                if (fadeAlpha <= 0) {
+                    fadeAlpha = 0;
+                    isTransitioning = false;
+                }
+            }
+
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapeRenderer.setProjectionMatrix(uiStage.getCamera().combined);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(0, 0, 0, fadeAlpha);
+            shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            shapeRenderer.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+        } else if (fadeAlpha > 0) {
             fadeAlpha -= delta * fadeSpeed;
             if (fadeAlpha < 0) fadeAlpha = 0;
 
@@ -712,27 +847,47 @@ public class GameScreen implements Screen {
     }
 
     private void checkInteraction() {
-        if (playerPos.dst(npcPos) <= TILE_SIZE * 1.5f) {
-            currentDialogText = "Adam: Halo! Selamat datang di COMPS to Life. Jelajahi area sekitar untuk menemukan NPC lainnya!";
-            dialogLabel.setText(currentDialogText);
-            showCustomDialog = true;
-        } else if (playerPos.dst(npcAlmetPos) <= TILE_SIZE * 1.5f) {
-            openQuiz();
-        } else if (playerPos.dst(npcArkaPos) <= TILE_SIZE * 1.5f) {
-            currentDialogText = "Arka: Hai! Aku Arka. Senang bertemu denganmu di dekat lokasi spawn ini!";
-            dialogLabel.setText(currentDialogText);
-            showCustomDialog = true;
-        } else if (playerPos.dst(npcAryaPos) <= TILE_SIZE * 1.5f) {
-            currentDialogText = "Arya: Halo, kawan! Aku Arya. Selamat berpetualang di dunia COMPS to Life!";
-            dialogLabel.setText(currentDialogText);
-            showCustomDialog = true;
-        } else if (extraNpcs != null) {
-            for (GameNPC npc : extraNpcs) {
-                if (npc.isNearPlayer(playerPos, TILE_SIZE)) {
-                    currentDialogText = npc.getDialogText();
-                    dialogLabel.setText(currentDialogText);
-                    showCustomDialog = true;
-                    break;
+        boolean isSelasar = "map/SelasarFIK.tmx".equals(currentMapName);
+        if (!isSelasar) {
+            if (playerPos.dst(npcPos) <= TILE_SIZE * 1.5f) {
+                currentDialogText = "Adam: Halo! Selamat datang di COMPS to Life. Jelajahi area sekitar untuk menemukan NPC lainnya!";
+                dialogLabel.setText(currentDialogText);
+                showCustomDialog = true;
+            } else if (playerPos.dst(npcAlmetPos) <= TILE_SIZE * 1.5f) {
+                openQuiz();
+            } else if (playerPos.dst(npcArkaPos) <= TILE_SIZE * 1.5f) {
+                startNpcDialogueFlow("Arka");
+            } else if (playerPos.dst(npcAryaPos) <= TILE_SIZE * 1.5f) {
+                startNpcDialogueFlow("Arya");
+            } else if (extraNpcs != null) {
+                for (GameNPC npc : extraNpcs) {
+                    if (!npc.isOnSelasar() && npc.isNearPlayer(playerPos, TILE_SIZE)) {
+                        String key = npc.getName().toLowerCase().replace(" ", "");
+                        if (npcDialogueFlows.containsKey(key)) {
+                            startNpcDialogueFlow(npc.getName());
+                        } else {
+                            currentDialogText = npc.getDialogText();
+                            dialogLabel.setText(currentDialogText);
+                            showCustomDialog = true;
+                        }
+                        break;
+                    }
+                }
+            }
+        } else {
+            if (extraNpcs != null) {
+                for (GameNPC npc : extraNpcs) {
+                    if (npc.isOnSelasar() && npc.isNearPlayer(playerPos, TILE_SIZE)) {
+                        String key = npc.getName().toLowerCase().replace(" ", "");
+                        if (npcDialogueFlows.containsKey(key)) {
+                            startNpcDialogueFlow(npc.getName());
+                        } else {
+                            currentDialogText = npc.getDialogText();
+                            dialogLabel.setText(currentDialogText);
+                            showCustomDialog = true;
+                        }
+                        break;
+                    }
                 }
             }
         }
@@ -741,14 +896,108 @@ public class GameScreen implements Screen {
     private boolean isCellPassable(float x, float y) {
         int cellX = (int) (x / TILE_SIZE);
         int cellY = (int) (y / TILE_SIZE);
-        TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get("Ground");
-        TiledMapTileLayer blockLayer = (TiledMapTileLayer) map.getLayers().get("Block");
-        if (layer == null) return true;
-        if (cellX < 0 || cellX >= layer.getWidth() || cellY < 0 || cellY >= layer.getHeight()) return false;
 
-        if (blockLayer != null && blockLayer.getCell(cellX, cellY) != null) return false;
-        if (layer.getCell(cellX, cellY) == null) return false;
+        if ("map/map-upnvj.tmx".equals(currentMapName)) {
+            // Override transition portal coordinates to be passable
+            if (cellX == 80 && (cellY >= 136 && cellY <= 138)) {
+                return true;
+            }
+            TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get("Ground");
+            TiledMapTileLayer blockLayer = (TiledMapTileLayer) map.getLayers().get("Block");
+            if (layer == null) return true;
+            if (cellX < 0 || cellX >= layer.getWidth() || cellY < 0 || cellY >= layer.getHeight()) return false;
+
+            if (blockLayer != null && blockLayer.getCell(cellX, cellY) != null) return false;
+            if (layer.getCell(cellX, cellY) == null) return false;
+            return true;
+        } else if ("map/SelasarFIK.tmx".equals(currentMapName)) {
+            // Override door/transition coordinates to be passable
+            if (cellX <= 4 && (cellY >= 6 && cellY <= 9)) {
+                return true;
+            }
+            TiledMapTileLayer layer1 = (TiledMapTileLayer) map.getLayers().get("Tile Layer 1");
+            if (layer1 == null) return true;
+            if (cellX < 0 || cellX >= layer1.getWidth() || cellY < 0 || cellY >= layer1.getHeight()) return false;
+
+            // Ground floor cell must not be empty
+            if (layer1.getCell(cellX, cellY) == null) return false;
+
+            // Check Layer 2 (furniture, etc.) and Layer 4 (walls, doors) for blocks
+            TiledMapTileLayer layer2 = (TiledMapTileLayer) map.getLayers().get("Tile Layer 2");
+            if (layer2 != null && layer2.getCell(cellX, cellY) != null) return false;
+
+            TiledMapTileLayer layer4 = (TiledMapTileLayer) map.getLayers().get("Tile Layer 4");
+            if (layer4 != null && layer4.getCell(cellX, cellY) != null) return false;
+
+            return true;
+        }
         return true;
+    }
+
+    private void checkMapTransition() {
+        int tileX = (int) (playerPos.x / TILE_SIZE);
+        int tileY = (int) (playerPos.y / TILE_SIZE);
+        if ("map/map-upnvj.tmx".equals(currentMapName)) {
+            if (tileX == 80) {
+                if (tileY == 136) {
+                    // Spawn at (5, 6)
+                    startMapTransition("map/SelasarFIK.tmx", new Vector2(5 * TILE_SIZE, 6 * TILE_SIZE));
+                } else if (tileY == 137) {
+                    // Spawn at (5, 7)
+                    startMapTransition("map/SelasarFIK.tmx", new Vector2(5 * TILE_SIZE, 7 * TILE_SIZE));
+                } else if (tileY == 138) {
+                    // Spawn at (5, 9)
+                    startMapTransition("map/SelasarFIK.tmx", new Vector2(5 * TILE_SIZE, 9 * TILE_SIZE));
+                }
+            }
+        } else if ("map/SelasarFIK.tmx".equals(currentMapName)) {
+            // Exit back to UPNVJ map when stepping on the door/entrance tiles (x <= 4, y = 6..9)
+            if (tileX <= 4 && (tileY >= 6 && tileY <= 9)) {
+                if (tileY == 6) {
+                    startMapTransition("map/map-upnvj.tmx", new Vector2(80 * TILE_SIZE, 136 * TILE_SIZE));
+                } else if (tileY == 7) {
+                    startMapTransition("map/map-upnvj.tmx", new Vector2(80 * TILE_SIZE, 137 * TILE_SIZE));
+                } else {
+                    startMapTransition("map/map-upnvj.tmx", new Vector2(80 * TILE_SIZE, 138 * TILE_SIZE));
+                }
+            }
+        }
+    }
+
+    private void startMapTransition(String mapName, Vector2 spawnPos) {
+        isTransitioning = true;
+        fadingOut = true;
+        nextMapName = mapName;
+        nextPlayerPos.set(spawnPos);
+    }
+
+    private void performMapChange() {
+        if (map != null) map.dispose();
+        if (mapRenderer != null) mapRenderer.dispose();
+
+        currentMapName = nextMapName;
+        map = new TmxMapLoader().load(currentMapName);
+        mapRenderer = new OrthogonalTiledMapRenderer(map, game.batch);
+
+        playerPos.set(nextPlayerPos);
+        targetPos.set(nextPlayerPos);
+        isMoving = false;
+    }
+
+    private void drawMapIndicators() {
+        if ("map/map-upnvj.tmx".equals(currentMapName)) {
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapeRenderer.setProjectionMatrix(camera.combined);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            // Black color with 50% opacity for marker
+            shapeRenderer.setColor(new Color(0f, 0f, 0f, 0.5f));
+            shapeRenderer.rect(80 * TILE_SIZE, 136 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            shapeRenderer.rect(80 * TILE_SIZE, 137 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            shapeRenderer.rect(80 * TILE_SIZE, 138 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            shapeRenderer.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+        }
     }
 
     private void update(float delta) {
@@ -777,6 +1026,7 @@ public class GameScreen implements Screen {
                 // Stop sound when target reached
                 runSound.stop(runSoundId);
                 runSoundId = -1;
+                checkMapTransition();
             }
         }
         camera.position.set(playerPos.x + 8 + playerOffsetX, playerPos.y + 16, 0);
@@ -789,6 +1039,7 @@ public class GameScreen implements Screen {
         camera.update();
         uiStage.getViewport().update(width, height, true);
         rebuildQuizTable(width, height);
+        rebuildNpcDialogLayout(width, height);
     }
 
     @Override
@@ -845,6 +1096,10 @@ public class GameScreen implements Screen {
         if (qzB_HoverTex != null) qzB_HoverTex.dispose();
         if (qzC_NormalTex != null) qzC_NormalTex.dispose();
         if (qzC_HoverTex != null) qzC_HoverTex.dispose();
+
+        if (activeNpcDialog != null && activeNpcDialog.currentTexture != null) {
+            activeNpcDialog.currentTexture.dispose();
+        }
 
         uiStage.dispose();
         skin.dispose();
@@ -931,13 +1186,23 @@ public class GameScreen implements Screen {
         private final Vector2 position;
         private final Texture texture;
         private final String dialogText;
+        private final boolean onSelasar;
 
-        public GameNPC(String name, float tileX, float tileY, String texturePath, String dialogText, float tileSize) {
+        public GameNPC(String name, float tileX, float tileY, String texturePath, String dialogText, float tileSize, boolean onSelasar) {
             this.name = name;
             this.position = new Vector2(tileX * tileSize, tileY * tileSize);
             this.texture = new Texture(Gdx.files.internal(texturePath));
             this.texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
             this.dialogText = dialogText;
+            this.onSelasar = onSelasar;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public boolean isOnSelasar() {
+            return onSelasar;
         }
 
         public void draw(com.badlogic.gdx.graphics.g2d.SpriteBatch batch) {
@@ -954,6 +1219,331 @@ public class GameScreen implements Screen {
 
         public void dispose() {
             if (texture != null) texture.dispose();
+        }
+    }
+
+    private static class NpcDialogueFlow {
+        String name;
+        List<String> normals = new ArrayList<>();
+        String quiz;
+        char answer;
+        String right;
+        String wrong;
+        List<String> posts = new ArrayList<>();
+
+        public NpcDialogueFlow(String name, String[] normals, String quiz, char answer, String right, String wrong, String[] posts) {
+            this.name = name;
+            if (normals != null) {
+                for (String s : normals) this.normals.add(s);
+            }
+            this.quiz = quiz;
+            this.answer = answer;
+            this.right = right;
+            this.wrong = wrong;
+            if (posts != null) {
+                for (String s : posts) this.posts.add(s);
+            }
+        }
+    }
+
+    private static class DialogueState {
+        NpcDialogueFlow flow;
+        int currentStep = 0;
+        boolean inQuiz = false;
+        boolean quizAnswered = false;
+        boolean quizCorrect = false;
+        boolean inPostQuiz = false;
+        int postQuizStep = 0;
+        Texture currentTexture = null;
+    }
+
+    private void initNpcDialogueFlows() {
+        npcDialogueFlows = new HashMap<>();
+
+        npcDialogueFlows.put("arka", new NpcDialogueFlow("Arka",
+            new String[]{"dialog/arka/Arka-1.png", "dialog/arka/Arka-2.png"},
+            "dialog/arka/Arka-3-QzJwb=A.png", 'A',
+            "dialog/arka/Arka4-right.png", "dialog/arka/Arka-4-wrong.png",
+            new String[]{}
+        ));
+
+        npcDialogueFlows.put("arya", new NpcDialogueFlow("Arya",
+            new String[]{
+                "dialog/arya/Arya-1.png", "dialog/arya/Arya-2.png", "dialog/arya/Arya-3.png",
+                "dialog/arya/Arya-4.png", "dialog/arya/Arya-5.png", "dialog/arya/Arya-6.png",
+                "dialog/arya/Arya-7.png", "dialog/arya/Arya-8.png"
+            },
+            "dialog/arya/Arya-9-QzJwb=B.png", 'B',
+            "dialog/arya/Arya-10-right.png", "dialog/arya/Arya-10-wrong.png",
+            new String[]{}
+        ));
+
+        npcDialogueFlows.put("ayu", new NpcDialogueFlow("Ayu",
+            new String[]{"dialog/ayu/Ayu-1.png", "dialog/ayu/Ayu-2.png"},
+            "dialog/ayu/Ayu-3-QzJwb=B.png", 'B',
+            "dialog/ayu/Ayu-4-right.png", "dialog/ayu/Ayu-4-wrong.png",
+            new String[]{}
+        ));
+
+        npcDialogueFlows.put("nadhifa", new NpcDialogueFlow("Nadhifa",
+            new String[]{"dialog/nadhifa/Nadhifa-1.png", "dialog/nadhifa/Nadhifa-2.png"},
+            "dialog/nadhifa/Nadhifa-3-QzJwb=A.png", 'A',
+            "dialog/nadhifa/Nadhifa-4-right.png", "dialog/nadhifa/Nadhifa-4-wrong.png",
+            new String[]{}
+        ));
+
+        npcDialogueFlows.put("nadia", new NpcDialogueFlow("Nadia",
+            new String[]{"dialog/nadia/Nadia-1.png", "dialog/nadia/Nadia-2.png"},
+            "dialog/nadia/Nadia-3-QzJwb=B.png", 'B',
+            "dialog/nadia/Nadia-4-right.png", "dialog/nadia/Nadia-4-wrong.png",
+            new String[]{"dialog/nadia/Nadia-5.png"}
+        ));
+
+        npcDialogueFlows.put("pakhendra", new NpcDialogueFlow("Pak Hendra",
+            new String[]{"dialog/pakhendra/Pak_Hendra-1.png", "dialog/pakhendra/Pak_Hendra-2.png"},
+            "dialog/pakhendra/Pak_Hendra -3-QzJwb=C.png", 'C',
+            "dialog/pakhendra/Pak_Hendra-4-right.png", "dialog/pakhendra/Pak_Hendra-4-wrong.png",
+            new String[]{"dialog/pakhendra/Pak_Hendra 6.png"}
+        ));
+
+        npcDialogueFlows.put("reyhan", new NpcDialogueFlow("Reyhan",
+            new String[]{"dialog/reyhan/Reyhan-1.png"},
+            "dialog/reyhan/Reyhan-2.png", 'A',
+            "dialog/reyhan/Reyhan-4-right.png", "dialog/reyhan/Reyhan-4-wrong.png",
+            new String[]{}
+        ));
+
+        npcDialogueFlows.put("rizky", new NpcDialogueFlow("Rizky",
+            new String[]{"dialog/rizky/Rizky-1.png", "dialog/rizky/Rizky-2.png"},
+            "dialog/rizky/Rizky-3-QzJwb=A.png", 'A',
+            "dialog/rizky/Rizky-4-right.png", "dialog/rizky/Rizky-4-wrong.png",
+            new String[]{}
+        ));
+
+        npcDialogueFlows.put("salsa", new NpcDialogueFlow("Salsa",
+            new String[]{"dialog/salsa/Salsa-1.png", "dialog/salsa/Salsa-2.png"},
+            "dialog/salsa/Salsa-3-QzJwb=A.png", 'A',
+            "dialog/salsa/Salsa-4-right.png", "dialog/salsa/Salsa-4-wrong.png",
+            new String[]{"dialog/salsa/Salsa-5.png"}
+        ));
+
+        npcDialogueFlows.put("tasya", new NpcDialogueFlow("Tasya",
+            new String[]{"dialog/tasya/Tasya-1.png", "dialog/tasya/Tasya-2.png"},
+            "dialog/tasya/Tasya-3-QzJwb=B.png", 'B',
+            "dialog/tasya/Tasya-4-right.png", "dialog/tasya/Tasya-4-wrong.png",
+            new String[]{}
+        ));
+
+        npcDialogueFlows.put("zaki", new NpcDialogueFlow("Zaki",
+            new String[]{"dialog/zaki/Zaki-1.png", "dialog/zaki/Zaki-2.png"},
+            "dialog/zaki/Zaki-3-QzJwb=B.png", 'B',
+            "dialog/zaki/Zaki-4-right.png", "dialog/zaki/Zaki-4-wrong.png",
+            new String[]{}
+        ));
+    }
+
+    private void startNpcDialogueFlow(String npcName) {
+        String key = npcName.toLowerCase().replace(" ", "");
+        NpcDialogueFlow flow = npcDialogueFlows.get(key);
+        if (flow == null) return;
+
+        activeNpcDialog = new DialogueState();
+        activeNpcDialog.flow = flow;
+        activeNpcDialog.currentStep = 0;
+        activeNpcDialog.inQuiz = false;
+        activeNpcDialog.quizAnswered = false;
+        activeNpcDialog.inPostQuiz = false;
+
+        if (flow.normals.size() > 0) {
+            activeNpcDialog.currentTexture = new Texture(Gdx.files.internal(flow.normals.get(0)));
+            activeNpcDialog.currentTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+            npcDialogImage.setDrawable(new TextureRegionDrawable(new TextureRegion(activeNpcDialog.currentTexture)));
+            npcDialogImage.setVisible(true);
+            npcQuizButtonsTable.setVisible(false);
+            npcDialogActive = true;
+            pauseButton.setVisible(false);
+
+            rebuildNpcDialogLayout(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        }
+    }
+
+    private void advanceNpcDialogueFlow() {
+        if (activeNpcDialog == null) return;
+
+        NpcDialogueFlow flow = activeNpcDialog.flow;
+
+        if (activeNpcDialog.inQuiz) {
+            return;
+        }
+
+        if (activeNpcDialog.quizAnswered) {
+            if (activeNpcDialog.quizCorrect) {
+                if (flow.posts.size() > 0) {
+                    activeNpcDialog.quizAnswered = false;
+                    activeNpcDialog.inPostQuiz = true;
+                    activeNpcDialog.postQuizStep = 0;
+
+                    if (activeNpcDialog.currentTexture != null) {
+                        activeNpcDialog.currentTexture.dispose();
+                    }
+                    activeNpcDialog.currentTexture = new Texture(Gdx.files.internal(flow.posts.get(0)));
+                    activeNpcDialog.currentTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+                    npcDialogImage.setDrawable(new TextureRegionDrawable(new TextureRegion(activeNpcDialog.currentTexture)));
+                    rebuildNpcDialogLayout(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+                } else {
+                    closeNpcDialogueFlow();
+                }
+            } else {
+                closeNpcDialogueFlow();
+            }
+            return;
+        }
+
+        if (activeNpcDialog.inPostQuiz) {
+            activeNpcDialog.postQuizStep++;
+            if (activeNpcDialog.postQuizStep < flow.posts.size()) {
+                if (activeNpcDialog.currentTexture != null) {
+                    activeNpcDialog.currentTexture.dispose();
+                }
+                activeNpcDialog.currentTexture = new Texture(Gdx.files.internal(flow.posts.get(activeNpcDialog.postQuizStep)));
+                activeNpcDialog.currentTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+                npcDialogImage.setDrawable(new TextureRegionDrawable(new TextureRegion(activeNpcDialog.currentTexture)));
+                rebuildNpcDialogLayout(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            } else {
+                closeNpcDialogueFlow();
+            }
+            return;
+        }
+
+        activeNpcDialog.currentStep++;
+        if (activeNpcDialog.currentStep < flow.normals.size()) {
+            if (activeNpcDialog.currentTexture != null) {
+                activeNpcDialog.currentTexture.dispose();
+            }
+            activeNpcDialog.currentTexture = new Texture(Gdx.files.internal(flow.normals.get(activeNpcDialog.currentStep)));
+            activeNpcDialog.currentTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+            npcDialogImage.setDrawable(new TextureRegionDrawable(new TextureRegion(activeNpcDialog.currentTexture)));
+            rebuildNpcDialogLayout(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        } else if (flow.quiz != null) {
+            activeNpcDialog.inQuiz = true;
+            if (activeNpcDialog.currentTexture != null) {
+                activeNpcDialog.currentTexture.dispose();
+            }
+            activeNpcDialog.currentTexture = new Texture(Gdx.files.internal(flow.quiz));
+            activeNpcDialog.currentTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+            npcDialogImage.setDrawable(new TextureRegionDrawable(new TextureRegion(activeNpcDialog.currentTexture)));
+            rebuildNpcDialogLayout(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        } else {
+            closeNpcDialogueFlow();
+        }
+    }
+
+    private void handleNpcQuizAnswer(char answer) {
+        if (activeNpcDialog == null || !activeNpcDialog.inQuiz) return;
+
+        clickSound.play(1.0f);
+        NpcDialogueFlow flow = activeNpcDialog.flow;
+        activeNpcDialog.inQuiz = false;
+        activeNpcDialog.quizAnswered = true;
+        npcQuizButtonsTable.setVisible(false);
+
+        boolean isCorrect = (answer == 'A');
+        activeNpcDialog.quizCorrect = isCorrect;
+
+        if (activeNpcDialog.currentTexture != null) {
+            activeNpcDialog.currentTexture.dispose();
+        }
+
+        if (isCorrect) {
+            activeNpcDialog.currentTexture = new Texture(Gdx.files.internal(flow.right));
+        } else {
+            activeNpcDialog.currentTexture = new Texture(Gdx.files.internal(flow.wrong));
+        }
+        activeNpcDialog.currentTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        npcDialogImage.setDrawable(new TextureRegionDrawable(new TextureRegion(activeNpcDialog.currentTexture)));
+        rebuildNpcDialogLayout(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+    }
+
+    private void closeNpcDialogueFlow() {
+        npcDialogActive = false;
+        npcDialogImage.setVisible(false);
+        npcQuizButtonsTable.setVisible(false);
+        pauseButton.setVisible(true);
+
+        if (activeNpcDialog != null) {
+            if (activeNpcDialog.currentTexture != null) {
+                activeNpcDialog.currentTexture.dispose();
+            }
+            activeNpcDialog = null;
+        }
+    }
+
+    private void rebuildNpcDialogLayout(float width, float height) {
+        if (activeNpcDialog == null || activeNpcDialog.currentTexture == null) return;
+
+        float imgWidth = activeNpcDialog.currentTexture.getWidth();
+        float imgHeight = activeNpcDialog.currentTexture.getHeight();
+        float targetRatio = imgWidth / imgHeight;
+
+        float dialogWidth;
+        float dialogHeight;
+
+        if (targetRatio < 2.0f) {
+            // Quiz (centered, large size - full scale rendering)
+            dialogWidth = width * 0.85f;
+            dialogHeight = dialogWidth / targetRatio;
+
+            // If it takes up too much height, scale down
+            if (dialogHeight > height * 0.70f) {
+                dialogHeight = height * 0.70f;
+                dialogWidth = dialogHeight * targetRatio;
+            }
+
+            npcDialogImage.setSize(dialogWidth, dialogHeight);
+
+            float imgX = (width - dialogWidth) / 2f;
+            float imgY = (height - dialogHeight) / 2f + height * 0.08f;
+            npcDialogImage.setPosition(imgX, imgY);
+
+            // Size buttons
+            float btnWidth = dialogWidth * 0.09f;
+            if (btnWidth > 120f) btnWidth = 120f; // cap button width
+            float btnHeight = (btnWidth / 372f) * 338f;
+
+            npcQuizButtonsTable.clear();
+            npcQuizButtonsTable.add(npcQzButtonA).size(btnWidth, btnHeight).padRight(dialogWidth * 0.03f);
+            npcQuizButtonsTable.add(npcQzButtonB).size(btnWidth, btnHeight).padRight(dialogWidth * 0.03f);
+            npcQuizButtonsTable.add(npcQzButtonC).size(btnWidth, btnHeight);
+            
+            npcQuizButtonsTable.pack();
+
+            float tableWidth = npcQuizButtonsTable.getWidth();
+            float tableHeight = npcQuizButtonsTable.getHeight();
+            float tableX = (width - tableWidth) / 2f;
+            float tableY = imgY - tableHeight - height * 0.02f;
+            npcQuizButtonsTable.setPosition(tableX, tableY);
+            
+            if (activeNpcDialog.inQuiz) {
+                npcQuizButtonsTable.setVisible(true);
+            } else {
+                npcQuizButtonsTable.setVisible(false);
+            }
+        } else {
+            // Normal Dialogue (bottom aligned banner)
+            dialogWidth = width * 0.9f;
+            dialogHeight = dialogWidth / targetRatio;
+
+            if (dialogHeight > height * 0.4f) {
+                dialogHeight = height * 0.4f;
+                dialogWidth = dialogHeight * targetRatio;
+            }
+
+            npcDialogImage.setSize(dialogWidth, dialogHeight);
+
+            float imgX = (width - dialogWidth) / 2f;
+            float imgY = 20f;
+            npcDialogImage.setPosition(imgX, imgY);
+            npcQuizButtonsTable.setVisible(false);
         }
     }
 }
