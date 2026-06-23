@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -39,8 +41,11 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
 public class GameScreen implements Screen {
+    private static final int ALMET_UNLOCK_SCORE = 75;
+
     private final CompsGame game;
     private final Player player;
+    private boolean almetEquipped = false;
     private OrthographicCamera camera;
     private ShapeRenderer shapeRenderer;
     private Vector2 playerPos;
@@ -68,6 +73,7 @@ public class GameScreen implements Screen {
     private boolean quizActive = false;
     private boolean showCustomDialog = false;
     private DatabaseManager dbManager;
+    private final Set<String> completedNpcQuizzes = new HashSet<>();
 
     // Transition variables
     private float fadeAlpha = 1.0f;
@@ -152,6 +158,8 @@ public class GameScreen implements Screen {
     public GameScreen(CompsGame game, String username) {
         this.game = game;
         this.player = new Player(username);
+        this.dbManager = new DatabaseManager();
+        this.dbManager.initialize();
         this.camera = new OrthographicCamera();
         this.shapeRenderer = new ShapeRenderer();
 
@@ -161,6 +169,7 @@ public class GameScreen implements Screen {
 
         this.playerPos = new Vector2(79 * TILE_SIZE, 133 * TILE_SIZE);
         this.targetPos = new Vector2(playerPos);
+        loadSavedProgress();
 
         // NPC Adam at (48,63) - adjusted to passable tile
         this.npcPos = new Vector2(48 * TILE_SIZE, 63 * TILE_SIZE);
@@ -243,7 +252,6 @@ public class GameScreen implements Screen {
 
         this.uiStage = new Stage(new ScreenViewport());
         this.skin = new Skin(Gdx.files.internal("ui/uiskin.json"));
-        this.dbManager = new DatabaseManager();
 
         this.dialogLabel = new Label("", skin, "white");
         this.dialogLabel.setWrap(true);
@@ -381,6 +389,7 @@ public class GameScreen implements Screen {
             public void clicked(InputEvent event, float x, float y) {
                 clickSound.play(1.0f);
                 isPaused = false;
+                saveProgress();
                 game.setScreen(new MainMenuScreen(game));
             }
 
@@ -604,6 +613,118 @@ public class GameScreen implements Screen {
         return new Animation<>(0.1f, frames);
     }
 
+    private void loadSavedProgress() {
+        if (dbManager == null) return;
+
+        DatabaseManager.SaveData saveData = dbManager.loadOrCreatePlayer(player.getUsername());
+        player.setTotalScore(saveData.totalScore);
+        completedNpcQuizzes.clear();
+        completedNpcQuizzes.addAll(dbManager.loadCompletedNpcQuizzes(player.getUsername()));
+        almetEquipped = saveData.almetEquipped && completedNpcQuizzes.contains("almet");
+
+        if (!saveData.hasPosition()) {
+            return;
+        }
+
+        currentMapName = saveData.mapName;
+        if (map != null) map.dispose();
+        if (mapRenderer != null) mapRenderer.dispose();
+        map = new TmxMapLoader().load(currentMapName);
+        mapRenderer = new OrthogonalTiledMapRenderer(map, game.batch);
+
+        playerPos.set(saveData.playerTileX * TILE_SIZE, saveData.playerTileY * TILE_SIZE);
+        targetPos.set(playerPos);
+    }
+
+    private void saveProgress() {
+        if (dbManager == null) return;
+
+        dbManager.saveGame(
+            player.getUsername(),
+            player.getTotalScore(),
+            currentMapName,
+            playerPos.x / TILE_SIZE,
+            playerPos.y / TILE_SIZE,
+            almetEquipped
+        );
+    }
+
+    private String normalizeNpcKey(String npcName) {
+        return npcName.toLowerCase().replace(" ", "");
+    }
+
+    private boolean isInteractKeyJustPressed() {
+        return Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
+            || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
+            || Gdx.input.isKeyJustPressed(Input.Keys.E);
+    }
+
+    private void handleBackKey() {
+        if (!Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            return;
+        }
+
+        if (showCustomDialog) {
+            showCustomDialog = false;
+        } else if (npcDialogActive) {
+            closeNpcDialogueFlow();
+        } else if (hintActive) {
+            closeHint();
+        } else if (quizActive) {
+            closeQuiz();
+        } else if (isPaused) {
+            isPaused = false;
+            pauseButton.setVisible(true);
+            pauseMenuTable.setVisible(false);
+        } else if (!isTransitioning) {
+            isPaused = true;
+            pauseButton.setVisible(false);
+            pauseMenuTable.setVisible(true);
+            if (runSoundId != -1) {
+                runSound.stop(runSoundId);
+                runSoundId = -1;
+            }
+        }
+    }
+
+    private int getNpcScore(String npcKey) {
+        switch (npcKey) {
+            case "arya":
+            case "nadhifa":
+            case "nadia":
+                return 5;
+            case "pakhendra":
+                return 15;
+            case "ayu":
+            case "arka":
+            case "reyhan":
+            case "rizky":
+            case "salsa":
+            case "tasya":
+            case "zaki":
+                return 10;
+            default:
+                return 0;
+        }
+    }
+
+    private void addScoreOnceForNpc(String npcKey, int points) {
+        if (completedNpcQuizzes.add(npcKey)) {
+            player.addScore(points);
+        }
+    }
+
+    private TextureRegion getAlmetFrameForDirection(Direction direction) {
+        Animation<TextureRegion> almetAnim;
+        switch (direction) {
+            case UP: almetAnim = almetUp; break;
+            case LEFT: almetAnim = almetLeft; break;
+            case RIGHT: almetAnim = almetRight; break;
+            default: almetAnim = almetDown; break;
+        }
+        return almetAnim.getKeyFrame(stateTime, true);
+    }
+
     @Override
     public void show() {
         Gdx.input.setInputProcessor(uiStage);
@@ -611,6 +732,8 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
+        handleBackKey();
+
         if (coordLabel != null) {
             int tileX = (int) (playerPos.x / TILE_SIZE);
             int tileY = (int) (playerPos.y / TILE_SIZE);
@@ -621,20 +744,20 @@ public class GameScreen implements Screen {
             handleInput(delta);
             update(delta);
         } else if (showCustomDialog && !isPaused) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+            if (isInteractKeyJustPressed()) {
                 showCustomDialog = false;
             }
         } else if (npcDialogActive && !isPaused) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+            if (isInteractKeyJustPressed()) {
                 advanceNpcDialogueFlow();
             }
         } else if (hintActive && !isPaused) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+            if (isInteractKeyJustPressed()) {
                 closeHint();
             }
         } else if (quizActive && !isPaused) {
             if (quizAnswered) {
-                if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+                if (isInteractKeyJustPressed()) {
                     if (quizSuccess) {
                         closeQuiz();
                     } else {
@@ -706,7 +829,9 @@ public class GameScreen implements Screen {
             }
         }
 
-        TextureRegion currentFrame = currentAnimation.getKeyFrame(stateTime, true);
+        TextureRegion currentFrame = almetEquipped
+            ? getAlmetFrameForDirection(lastDirection)
+            : currentAnimation.getKeyFrame(stateTime, true);
         game.batch.draw(currentFrame, playerPos.x + playerOffsetX, playerPos.y, 16, 32);
         game.batch.end();
 
@@ -814,7 +939,7 @@ public class GameScreen implements Screen {
         if (isPaused) return;
         if (isMoving) return;
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+        if (isInteractKeyJustPressed()) {
             checkInteraction();
         }
 
@@ -822,22 +947,22 @@ public class GameScreen implements Screen {
         float nextY = playerPos.y;
         boolean attemptingMove = false;
 
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A)) {
             nextX -= TILE_SIZE;
             lastDirection = Direction.LEFT;
             currentAnimation = walkLeft;
             attemptingMove = true;
-        } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+        } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D)) {
             nextX += TILE_SIZE;
             lastDirection = Direction.RIGHT;
             currentAnimation = walkRight;
             attemptingMove = true;
-        } else if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
+        } else if (Gdx.input.isKeyPressed(Input.Keys.UP) || Gdx.input.isKeyPressed(Input.Keys.W)) {
             nextY += TILE_SIZE;
             lastDirection = Direction.UP;
             currentAnimation = walkUp;
             attemptingMove = true;
-        } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+        } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN) || Gdx.input.isKeyPressed(Input.Keys.S)) {
             nextY -= TILE_SIZE;
             lastDirection = Direction.DOWN;
             currentAnimation = walkDown;
@@ -866,7 +991,21 @@ public class GameScreen implements Screen {
                 dialogLabel.setText(currentDialogText);
                 showCustomDialog = true;
             } else if (playerPos.dst(npcAlmetPos) <= TILE_SIZE * 1.5f) {
-                openQuiz();
+                if (completedNpcQuizzes.contains("almet")) {
+                    almetEquipped = !almetEquipped;
+                    saveProgress();
+                    currentDialogText = almetEquipped
+                        ? "Almet: Jas almamater dipakai."
+                        : "Almet: Jas almamater dilepas.";
+                    dialogLabel.setText(currentDialogText);
+                    showCustomDialog = true;
+                } else if (player.getTotalScore() >= ALMET_UNLOCK_SCORE) {
+                    openQuiz();
+                } else {
+                    currentDialogText = "Almet: Kumpulkan minimal " + ALMET_UNLOCK_SCORE + " poin untuk membuka almamater. Poin kamu sekarang: " + player.getTotalScore() + ".";
+                    dialogLabel.setText(currentDialogText);
+                    showCustomDialog = true;
+                }
             } else if (playerPos.dst(npcArkaPos) <= TILE_SIZE * 1.5f) {
                 startNpcDialogueFlow("Arka");
             } else if (playerPos.dst(npcAryaPos) <= TILE_SIZE * 1.5f) {
@@ -874,7 +1013,7 @@ public class GameScreen implements Screen {
             } else if (extraNpcs != null) {
                 for (GameNPC npc : extraNpcs) {
                     if (!npc.isOnSelasar() && npc.isNearPlayer(playerPos, TILE_SIZE)) {
-                        String key = npc.getName().toLowerCase().replace(" ", "");
+                        String key = normalizeNpcKey(npc.getName());
                         if (npcDialogueFlows.containsKey(key)) {
                             startNpcDialogueFlow(npc.getName());
                         } else {
@@ -898,7 +1037,7 @@ public class GameScreen implements Screen {
             } else if (extraNpcs != null) {
                 for (GameNPC npc : extraNpcs) {
                     if (npc.isOnSelasar() && npc.isNearPlayer(playerPos, TILE_SIZE)) {
-                        String key = npc.getName().toLowerCase().replace(" ", "");
+                        String key = normalizeNpcKey(npc.getName());
                         if (npcDialogueFlows.containsKey(key)) {
                             startNpcDialogueFlow(npc.getName());
                         } else {
@@ -1085,6 +1224,7 @@ public class GameScreen implements Screen {
         playerPos.set(nextPlayerPos);
         targetPos.set(nextPlayerPos);
         isMoving = false;
+        saveProgress();
     }
 
     private void drawMapIndicators() {
@@ -1206,6 +1346,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void dispose() {
+        saveProgress();
         if (walkSheet != null) walkSheet.dispose();
         if (idleSheet != null) idleSheet.dispose();
         if (npcAlmetSheet != null) npcAlmetSheet.dispose();
@@ -1274,9 +1415,15 @@ public class GameScreen implements Screen {
         clickSound.play(1.0f);
         if (answer == 'A') {
             quizSuccess = true;
-            quizQuestionLabel.setText("Jawaban Benar! Register, ALU, dan Control Unit\nadalah komponen utama dari CPU.\n\n(Tekan ENTER untuk kembali)");
+            completedNpcQuizzes.add("almet");
+            almetEquipped = true;
+            dbManager.saveNpcQuizResult(player.getUsername(), "almet", true, 0);
+            saveProgress();
+            quizQuestionLabel.setText("Jawaban Benar! Almamater berhasil dibuka dan dipakai.\n\n(Tekan ENTER untuk kembali)");
         } else {
             quizSuccess = false;
+            dbManager.saveNpcQuizResult(player.getUsername(), "almet", false, 0);
+            saveProgress();
             quizQuestionLabel.setText("Jawaban Salah! Pilihan " + answer + " bukan komponen utama CPU.\n\n(Tekan ENTER untuk mencoba lagi)");
         }
         rebuildQuizTable(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -1494,7 +1641,7 @@ public class GameScreen implements Screen {
     }
 
     private void startNpcDialogueFlow(String npcName) {
-        String key = npcName.toLowerCase().replace(" ", "");
+        String key = normalizeNpcKey(npcName);
         NpcDialogueFlow flow = npcDialogueFlows.get(key);
         if (flow == null) return;
 
@@ -1600,6 +1747,13 @@ public class GameScreen implements Screen {
 
         boolean isCorrect = (answer == flow.answer);
         activeNpcDialog.quizCorrect = isCorrect;
+        String npcKey = normalizeNpcKey(flow.name);
+        int npcScore = getNpcScore(npcKey);
+        if (isCorrect) {
+            addScoreOnceForNpc(npcKey, npcScore);
+        }
+        dbManager.saveNpcQuizResult(player.getUsername(), npcKey, isCorrect, npcScore);
+        saveProgress();
 
         if (activeNpcDialog.currentTexture != null) {
             activeNpcDialog.currentTexture.dispose();
