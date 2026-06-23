@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
 
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
@@ -148,6 +149,10 @@ public class GameScreen implements Screen {
     private Texture pauseTitleTex;
     private Sound hoverSound;
     private Sound clickSound;
+    private Sound getItemSound;
+    private Music bgMusic;
+    private boolean bgMusicPausedForAlmet = false;
+    private float getAlmetSoundDelay = -1f;
 
     // Quiz components
     private Table quizContainerTable;
@@ -184,14 +189,14 @@ public class GameScreen implements Screen {
         mapRenderer = new OrthogonalTiledMapRenderer(map, game.batch);
 
 
-        this.playerPos = new Vector2(79 * TILE_SIZE, 133 * TILE_SIZE);
+        this.playerPos = new Vector2(75 * TILE_SIZE, 135 * TILE_SIZE);
         this.targetPos = new Vector2(playerPos);
         loadSavedProgress();
 
         // NPC Arka at (90, 114)
         this.npcArkaPos = new Vector2(90 * TILE_SIZE, 114 * TILE_SIZE);
-        // NPC Arya at (80, 132)
-        this.npcAryaPos = new Vector2(80 * TILE_SIZE, 132 * TILE_SIZE);
+        // NPC Arya at (78, 133)
+        this.npcAryaPos = new Vector2(78 * TILE_SIZE, 133 * TILE_SIZE);
 
         // Initialize extra NPCs
         this.extraNpcs = new ArrayList<>();
@@ -208,7 +213,7 @@ public class GameScreen implements Screen {
         // Showcase/pajangan NPCs using sprite/npc.png (main map)
         this.extraNpcs.add(new GameNPC("Showcase", 72f, 126f, "sprite/npc.png", null, TILE_SIZE, "map/Map UPNVJ.tmx", "kanan"));
         this.extraNpcs.add(new GameNPC("Showcase", 74f, 126f, "sprite/npc.png", null, TILE_SIZE, "map/Map UPNVJ.tmx", "kiri"));
-        this.extraNpcs.add(new GameNPC("Showcase", 59f, 109f, "sprite/npc.png", null, TILE_SIZE, "map/Map UPNVJ.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 59f, 111f, "sprite/npc.png", null, TILE_SIZE, "map/Map UPNVJ.tmx", "bawah"));
         this.extraNpcs.add(new GameNPC("Showcase", 57f, 110f, "sprite/npc.png", null, TILE_SIZE, "map/Map UPNVJ.tmx", "bawah"));
         this.extraNpcs.add(new GameNPC("Showcase", 57f, 110f, "sprite/npc.png", null, TILE_SIZE, "map/Map UPNVJ.tmx", "bawah"));
         this.extraNpcs.add(new GameNPC("Showcase", 57f, 112f, "sprite/npc.png", null, TILE_SIZE, "map/Map UPNVJ.tmx", "bawah"));
@@ -383,6 +388,12 @@ public class GameScreen implements Screen {
         // Load UI Sounds
         hoverSound = Gdx.audio.newSound(Gdx.files.internal("hover.ogg"));
         clickSound = Gdx.audio.newSound(Gdx.files.internal("click.ogg"));
+        getItemSound = Gdx.audio.newSound(Gdx.files.internal("music/get-item.ogg"));
+
+        // Load Background Music
+        bgMusic = Gdx.audio.newMusic(Gdx.files.internal("music/in-game-sound.ogg"));
+        bgMusic.setLooping(true);
+        bgMusic.setVolume(1.0f);
 
         // Setup Pause Button (Top-Right)
         TextureRegionDrawable pauseNormalDrawable = new TextureRegionDrawable(new TextureRegion(pauseNormalTex));
@@ -812,7 +823,7 @@ public class GameScreen implements Screen {
     }
 
     private String normalizeMapName(String mapName) {
-        if ("map/Map UPNVJ.tmx".equals(mapName)) {
+        if ("map/map-upnvj.tmx".equalsIgnoreCase(mapName) || "map/Map UPNVJ.tmx".equalsIgnoreCase(mapName)) {
             return "map/Map UPNVJ.tmx";
         }
         return mapName;
@@ -868,17 +879,7 @@ public class GameScreen implements Screen {
         uiStage.addActor(inventoryTable);
     }
 
-    private void handleInventoryKey() {
-        if (!Gdx.input.isKeyJustPressed(Input.Keys.E)) {
-            return;
-        }
 
-        if (inventoryActive) {
-            closeInventory();
-        } else if (!quizActive && !showCustomDialog && !npcDialogActive && !hintActive && !isPaused && !isTransitioning) {
-            openInventory();
-        }
-    }
 
     private void openInventory() {
         inventoryActive = true;
@@ -979,12 +980,24 @@ public class GameScreen implements Screen {
     @Override
     public void show() {
         Gdx.input.setInputProcessor(uiStage);
+        if (bgMusic != null && !bgMusic.isPlaying() && !bgMusicPausedForAlmet) {
+            bgMusic.play();
+        }
     }
 
     @Override
     public void render(float delta) {
         handleBackKey();
-        handleInventoryKey();
+
+        if (getAlmetSoundDelay > 0) {
+            getAlmetSoundDelay -= delta;
+            if (getAlmetSoundDelay <= 0) {
+                getAlmetSoundDelay = -1f;
+                if (getItemSound != null) {
+                    getItemSound.play(1.0f);
+                }
+            }
+        }
 
         if (buttonX != null) {
             buttonX.setVisible(player.getTotalScore() > 75 && completedNpcQuizzes.contains("pakhendra"));
@@ -1387,7 +1400,7 @@ public class GameScreen implements Screen {
         // Check if there is an NPC at this cell (cellX, cellY)
         if ("map/Map UPNVJ.tmx".equals(currentMapName)) {
             if (cellX == 90 && cellY == 114) return false; // npcArkaPos
-            if (cellX == 80 && cellY == 132) return false; // npcAryaPos
+            if (cellX == 78 && cellY == 133) return false; // npcAryaPos
 
             if (extraNpcs != null) {
                 for (GameNPC npc : extraNpcs) {
@@ -1658,10 +1671,13 @@ public class GameScreen implements Screen {
             if (playerPos.epsilonEquals(targetPos, 1f)) {
                 playerPos.set(targetPos);
                 isMoving = false;
-                // Stop sound when target reached
+                checkMapTransition();
+            }
+        } else {
+            // Stop sound when not moving
+            if (runSoundId != -1) {
                 runSound.stop(runSoundId);
                 runSoundId = -1;
-                checkMapTransition();
             }
         }
         camera.position.set(playerPos.x + 8 + playerOffsetX, playerPos.y + 16, 0);
@@ -1679,10 +1695,18 @@ public class GameScreen implements Screen {
     }
 
     @Override
-    public void pause() {}
+    public void pause() {
+        if (bgMusic != null && bgMusic.isPlaying()) {
+            bgMusic.pause();
+        }
+    }
 
     @Override
-    public void resume() {}
+    public void resume() {
+        if (bgMusic != null && !bgMusic.isPlaying() && !bgMusicPausedForAlmet) {
+            bgMusic.play();
+        }
+    }
 
     @Override
     public void hide() {
@@ -1691,6 +1715,9 @@ public class GameScreen implements Screen {
         if (runSoundId != -1) {
             runSound.stop(runSoundId);
             runSoundId = -1;
+        }
+        if (bgMusic != null && bgMusic.isPlaying()) {
+            bgMusic.stop();
         }
     }
 
@@ -1731,6 +1758,8 @@ public class GameScreen implements Screen {
         if (pauseTitleTex != null) pauseTitleTex.dispose();
         if (hoverSound != null) hoverSound.dispose();
         if (clickSound != null) clickSound.dispose();
+        if (getItemSound != null) getItemSound.dispose();
+        if (bgMusic != null) bgMusic.dispose();
 
         // Dispose quiz resources
         if (quizBgTex != null) quizBgTex.dispose();
@@ -2160,6 +2189,21 @@ public class GameScreen implements Screen {
         rebuildNpcDialogLayout(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
     }
 
+    private void checkAlmetUnlock() {
+        if (!completedNpcQuizzes.contains("almet") && player.getTotalScore() > 75 && completedNpcQuizzes.contains("pakhendra")) {
+            completedNpcQuizzes.add("almet");
+            almetEquipped = true;
+            if (buttonX != null) {
+                buttonX.setStyle(almetActiveStyle);
+            }
+            if (dbManager != null) {
+                dbManager.saveNpcQuizResult(player.getUsername(), "almet", true, 0);
+            }
+            saveProgress();
+            showHint("dialog/popup-got-almet.png");
+        }
+    }
+
     private void closeNpcDialogueFlow() {
         npcDialogActive = false;
         npcDialogImage.setVisible(false);
@@ -2172,6 +2216,8 @@ public class GameScreen implements Screen {
             }
             activeNpcDialog = null;
         }
+
+        checkAlmetUnlock();
     }
 
     private void rebuildNpcDialogLayout(float width, float height) {
@@ -2251,7 +2297,17 @@ public class GameScreen implements Screen {
         if (hintTexture != null) {
             hintTexture.dispose();
         }
-        clickSound.play(1.0f);
+        if (imagePath.contains("popup-got-almet.png")) {
+            if (bgMusic != null && bgMusic.isPlaying()) {
+                bgMusic.pause();
+                bgMusicPausedForAlmet = true;
+            }
+            if (getItemSound != null) {
+                getAlmetSoundDelay = 0.5f; // Wait 0.5 seconds before playing sound
+            }
+        } else {
+            clickSound.play(1.0f);
+        }
         hintTexture = new Texture(Gdx.files.internal(imagePath));
         hintTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         hintImage.setDrawable(new TextureRegionDrawable(new TextureRegion(hintTexture)));
@@ -2269,6 +2325,13 @@ public class GameScreen implements Screen {
             hintTexture.dispose();
             hintTexture = null;
         }
+        if (bgMusicPausedForAlmet) {
+            bgMusicPausedForAlmet = false;
+            if (bgMusic != null && !bgMusic.isPlaying()) {
+                bgMusic.play();
+            }
+        }
+        getAlmetSoundDelay = -1f;
     }
 
     private void rebuildHintLayout(float width, float height) {
