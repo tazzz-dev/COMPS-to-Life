@@ -42,6 +42,8 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 
 public class GameScreen implements Screen {
     private static final int ALMET_UNLOCK_SCORE = 75;
+    private static final float MINIMAP_SIZE = 160f;
+    private static final float MINIMAP_MARGIN = 20f;
 
     private final CompsGame game;
     private final Player player;
@@ -154,6 +156,7 @@ public class GameScreen implements Screen {
     private boolean quizAnswered = false;
     private boolean quizSuccess = false;
     private Label coordLabel;
+    private Label scoreLabel;
 
     public GameScreen(CompsGame game, String username) {
         this.game = game;
@@ -324,9 +327,14 @@ public class GameScreen implements Screen {
         // Setup Coordinate Indicator (Top-Left)
         Table coordTable = new Table();
         coordTable.setFillParent(true);
-        coordTable.top().left().pad(20);
+        coordTable.top().left().padTop(MINIMAP_MARGIN + MINIMAP_SIZE + 12f).padLeft(MINIMAP_MARGIN);
         coordLabel = new Label("X: 0, Y: 0", skin, "white");
-        coordTable.add(coordLabel);
+        Label.LabelStyle scoreStyle = new Label.LabelStyle(skin.get(Label.LabelStyle.class));
+        scoreStyle.font.getData().setScale(1.6f);
+        scoreLabel = new Label("Score: 0", scoreStyle);
+        scoreLabel.setColor(Color.YELLOW);
+        coordTable.add(coordLabel).left().row();
+        coordTable.add(scoreLabel).left().padTop(8);
         uiStage.addActor(coordTable);
 
         // Setup Pause Menu (Center)
@@ -739,6 +747,9 @@ public class GameScreen implements Screen {
             int tileY = (int) (playerPos.y / TILE_SIZE);
             coordLabel.setText("X: " + tileX + ", Y: " + tileY);
         }
+        if (scoreLabel != null) {
+            scoreLabel.setText("Score: " + player.getTotalScore());
+        }
 
         if (!quizActive && !showCustomDialog && !npcDialogActive && !hintActive && !isPaused && !isTransitioning) {
             handleInput(delta);
@@ -871,6 +882,8 @@ public class GameScreen implements Screen {
             Gdx.gl.glDisable(GL20.GL_BLEND);
         }
 
+        drawMinimap();
+
         uiStage.act(delta);
         uiStage.draw();
 
@@ -933,6 +946,63 @@ public class GameScreen implements Screen {
         }
         shapeRenderer.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    private void drawMinimap() {
+        TiledMapTileLayer layer = getMinimapLayer();
+        if (layer == null) return;
+
+        float x = MINIMAP_MARGIN;
+        float y = Gdx.graphics.getHeight() - MINIMAP_MARGIN - MINIMAP_SIZE;
+        float mapWidthPixels = layer.getWidth() * TILE_SIZE;
+        float mapHeightPixels = layer.getHeight() * TILE_SIZE;
+        float scale = Math.min(MINIMAP_SIZE / mapWidthPixels, MINIMAP_SIZE / mapHeightPixels);
+        float miniWidth = mapWidthPixels * scale;
+        float miniHeight = mapHeightPixels * scale;
+        float mapX = x + (MINIMAP_SIZE - miniWidth) / 2f;
+        float mapY = y + (MINIMAP_SIZE - miniHeight) / 2f;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapeRenderer.setProjectionMatrix(uiStage.getCamera().combined);
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0f, 0f, 0f, 0.65f);
+        shapeRenderer.rect(x, y, MINIMAP_SIZE, MINIMAP_SIZE);
+        shapeRenderer.end();
+
+        OrthographicCamera minimapCamera = new OrthographicCamera(mapWidthPixels, mapHeightPixels);
+        minimapCamera.position.set(mapWidthPixels / 2f, mapHeightPixels / 2f, 0f);
+        minimapCamera.update();
+
+        Gdx.gl.glViewport(Math.round(mapX), Math.round(mapY), Math.round(miniWidth), Math.round(miniHeight));
+        mapRenderer.setView(minimapCamera);
+        mapRenderer.render();
+        Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(1f, 1f, 1f, 0.85f);
+        shapeRenderer.rect(x, y, MINIMAP_SIZE, MINIMAP_SIZE);
+        shapeRenderer.setColor(1f, 1f, 1f, 0.35f);
+        shapeRenderer.rect(mapX, mapY, miniWidth, miniHeight);
+        shapeRenderer.end();
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.18f, 0.95f, 0.45f, 0.95f);
+        shapeRenderer.circle(mapX + playerPos.x * scale, mapY + playerPos.y * scale, 4.5f);
+        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    private TiledMapTileLayer getMinimapLayer() {
+        if ("map/map-upnvj.tmx".equals(currentMapName)) {
+            return (TiledMapTileLayer) map.getLayers().get("Ground");
+        } else if ("map/SelasarFIK.tmx".equals(currentMapName)) {
+            return (TiledMapTileLayer) map.getLayers().get("Tile Layer 1");
+        } else if ("map/Denah Ruangan Kelas.tmx".equals(currentMapName)) {
+            return (TiledMapTileLayer) map.getLayers().get("Tile Layer 4");
+        }
+        return null;
     }
 
     private void handleInput(float delta) {
@@ -1338,6 +1408,7 @@ public class GameScreen implements Screen {
     @Override
     public void hide() {
         Gdx.input.setInputProcessor(null);
+        game.batch.setProjectionMatrix(uiStage.getCamera().combined);
         if (runSoundId != -1) {
             runSound.stop(runSoundId);
             runSoundId = -1;

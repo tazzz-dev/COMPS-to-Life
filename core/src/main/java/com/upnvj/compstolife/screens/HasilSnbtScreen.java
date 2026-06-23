@@ -5,12 +5,14 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Matrix4;
 import com.upnvj.compstolife.CompsGame;
 
 public class HasilSnbtScreen implements Screen {
     private final CompsGame game;
     private Texture texture;
     private ShapeRenderer shapeRenderer;
+    private final Matrix4 screenProjection = new Matrix4();
 
     private enum State {
         FADE_IN,
@@ -86,7 +88,10 @@ public class HasilSnbtScreen implements Screen {
             return;
         }
 
+        screenProjection.setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
         // Draw background texture stretched to fill screen
+        game.batch.setProjectionMatrix(screenProjection);
         game.batch.begin();
         game.batch.draw(texture, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         game.batch.end();
@@ -95,6 +100,7 @@ public class HasilSnbtScreen implements Screen {
         if (fadeAlpha > 0) {
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapeRenderer.setProjectionMatrix(screenProjection);
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             shapeRenderer.setColor(0, 0, 0, fadeAlpha);
             shapeRenderer.rect(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -105,6 +111,7 @@ public class HasilSnbtScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
+        screenProjection.setToOrtho2D(0, 0, width, height);
     }
 
     @Override
