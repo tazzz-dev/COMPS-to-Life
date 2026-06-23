@@ -63,6 +63,10 @@ public class GameScreen implements Screen {
     private Texture idleSheet;
     private Animation<TextureRegion> walkDown, walkUp, walkLeft, walkRight;
     private Animation<TextureRegion> idleDown, idleUp, idleLeft, idleRight;
+    private Texture almetWalkSheet;
+    private Texture almetIdleSheet;
+    private Animation<TextureRegion> almetWalkDown, almetWalkUp, almetWalkLeft, almetWalkRight;
+    private Animation<TextureRegion> almetIdleDown, almetIdleUp, almetIdleLeft, almetIdleRight;
     private Animation<TextureRegion> currentAnimation;
     private float stateTime;
     private boolean isMoving = false;
@@ -127,6 +131,8 @@ public class GameScreen implements Screen {
     // Pause components
     private boolean isPaused = false;
     private ImageButton pauseButton;
+    private ImageButton buttonX;
+    private Texture buttonXNormalTex, buttonXHoverTex;
     private Table pauseMenuTable;
     private ImageButton resumeButton;
     private ImageButton settingButton;
@@ -272,12 +278,16 @@ public class GameScreen implements Screen {
         npcAlmetSheet = new Texture(Gdx.files.internal("sprite/almet-stop.png"));
         npcArkaTexture = new Texture(Gdx.files.internal("sprite/arka.png"));
         npcAryaTexture = new Texture(Gdx.files.internal("sprite/arya.png"));
+        almetWalkSheet = new Texture(Gdx.files.internal("sprite/almet_running.png"));
+        almetIdleSheet = new Texture(Gdx.files.internal("sprite/almet_idle.png"));
 
         walkSheet.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         idleSheet.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         npcAlmetSheet.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         npcArkaTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         npcAryaTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        almetWalkSheet.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        almetIdleSheet.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
 
         int frameWidth = 16;
         int frameHeight = 32;
@@ -293,6 +303,18 @@ public class GameScreen implements Screen {
         idleUp = createHorizontalAnimation(idleTmp, 6);
         idleLeft = createHorizontalAnimation(idleTmp, 12);
         idleRight = createHorizontalAnimation(idleTmp, 0);
+
+        TextureRegion[][] almetWalkTmp = TextureRegion.split(almetWalkSheet, frameWidth, frameHeight);
+        almetWalkDown = createHorizontalAnimation(almetWalkTmp, 18);
+        almetWalkUp = createHorizontalAnimation(almetWalkTmp, 6);
+        almetWalkLeft = createHorizontalAnimation(almetWalkTmp, 12);
+        almetWalkRight = createHorizontalAnimation(almetWalkTmp, 0);
+
+        TextureRegion[][] almetIdleTmp = TextureRegion.split(almetIdleSheet, frameWidth, frameHeight);
+        almetIdleDown = createHorizontalAnimation(almetIdleTmp, 18);
+        almetIdleUp = createHorizontalAnimation(almetIdleTmp, 6);
+        almetIdleLeft = createHorizontalAnimation(almetIdleTmp, 12);
+        almetIdleRight = createHorizontalAnimation(almetIdleTmp, 0);
 
         // Almet Animations (assuming 4 frames: DOWN, UP, LEFT, RIGHT)
         int almetFrameWidth = npcAlmetSheet.getWidth() / 4;
@@ -389,6 +411,43 @@ public class GameScreen implements Screen {
         pauseButtonTable.top().right().pad(10);
         pauseButtonTable.add(pauseButton).size(80, 80);
         uiStage.addActor(pauseButtonTable);
+
+        // Setup Button X (Bottom-Right) to toggle almet
+        buttonXNormalTex = new Texture(Gdx.files.internal("btn/button-x-normal.png"));
+        buttonXHoverTex = new Texture(Gdx.files.internal("btn/button-x-hover.png"));
+        buttonXNormalTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        buttonXHoverTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+
+        TextureRegionDrawable xNormalDrawable = new TextureRegionDrawable(new TextureRegion(buttonXNormalTex));
+        TextureRegionDrawable xHoverDrawable = new TextureRegionDrawable(new TextureRegion(buttonXHoverTex));
+        ImageButton.ImageButtonStyle xStyle = new ImageButton.ImageButtonStyle();
+        xStyle.imageUp = xNormalDrawable;
+        xStyle.imageOver = xHoverDrawable;
+
+        buttonX = new ImageButton(xStyle);
+        buttonX.setVisible(false);
+        buttonX.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                clickSound.play(1.0f);
+                almetEquipped = !almetEquipped;
+                saveProgress();
+            }
+
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                super.enter(event, x, y, pointer, fromActor);
+                if (pointer == -1) {
+                    hoverSound.play(1.0f);
+                }
+            }
+        });
+
+        Table almetButtonTable = new Table();
+        almetButtonTable.setFillParent(true);
+        almetButtonTable.bottom().right().pad(10);
+        almetButtonTable.add(buttonX).size(80, 80);
+        uiStage.addActor(almetButtonTable);
 
         // Setup Coordinate Indicator (Top-Left)
         Table coordTable = new Table();
@@ -694,7 +753,8 @@ public class GameScreen implements Screen {
         player.setTotalScore(saveData.totalScore);
         completedNpcQuizzes.clear();
         completedNpcQuizzes.addAll(dbManager.loadCompletedNpcQuizzes(player.getUsername()));
-        almetEquipped = saveData.almetEquipped && completedNpcQuizzes.contains("almet");
+        boolean isAlmetUnlocked = saveData.totalScore > 75 && completedNpcQuizzes.contains("pakhendra");
+        almetEquipped = saveData.almetEquipped && isAlmetUnlocked;
 
         if (!saveData.hasPosition()) {
             return;
@@ -808,6 +868,10 @@ public class GameScreen implements Screen {
     public void render(float delta) {
         handleBackKey();
 
+        if (buttonX != null) {
+            buttonX.setVisible(player.getTotalScore() > 75 && completedNpcQuizzes.contains("pakhendra"));
+        }
+
         if (coordLabel != null) {
             int tileX = (int) (playerPos.x / TILE_SIZE);
             int tileY = (int) (playerPos.y / TILE_SIZE);
@@ -890,9 +954,25 @@ public class GameScreen implements Screen {
             }
         }
 
-        TextureRegion currentFrame = almetEquipped
-            ? getAlmetFrameForDirection(lastDirection)
-            : currentAnimation.getKeyFrame(stateTime, true);
+        Animation<TextureRegion> animToDraw = currentAnimation;
+        if (almetEquipped) {
+            if (isMoving) {
+                switch (lastDirection) {
+                    case LEFT: animToDraw = almetWalkLeft; break;
+                    case RIGHT: animToDraw = almetWalkRight; break;
+                    case UP: animToDraw = almetWalkUp; break;
+                    case DOWN: animToDraw = almetWalkDown; break;
+                }
+            } else {
+                switch (lastDirection) {
+                    case LEFT: animToDraw = almetIdleLeft; break;
+                    case RIGHT: animToDraw = almetIdleRight; break;
+                    case UP: animToDraw = almetIdleUp; break;
+                    case DOWN: animToDraw = almetIdleDown; break;
+                }
+            }
+        }
+        TextureRegion currentFrame = animToDraw.getKeyFrame(stateTime, true);
         game.batch.draw(currentFrame, playerPos.x + playerOffsetX, playerPos.y, 16, 32);
         game.batch.end();
 
@@ -1483,6 +1563,10 @@ public class GameScreen implements Screen {
         saveProgress();
         if (walkSheet != null) walkSheet.dispose();
         if (idleSheet != null) idleSheet.dispose();
+        if (almetWalkSheet != null) almetWalkSheet.dispose();
+        if (almetIdleSheet != null) almetIdleSheet.dispose();
+        if (buttonXNormalTex != null) buttonXNormalTex.dispose();
+        if (buttonXHoverTex != null) buttonXHoverTex.dispose();
         if (npcAlmetSheet != null) npcAlmetSheet.dispose();
         if (npcArkaTexture != null) npcArkaTexture.dispose();
         if (npcAryaTexture != null) npcAryaTexture.dispose();
