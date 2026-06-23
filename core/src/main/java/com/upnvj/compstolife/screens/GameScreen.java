@@ -35,6 +35,7 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -80,7 +81,7 @@ public class GameScreen implements Screen {
     // Transition variables
     private float fadeAlpha = 1.0f;
     private float fadeSpeed = 0.5f;
-    private String currentMapName = "map/map-upnvj.tmx";
+    private String currentMapName = "map/Map UPNVJ.tmx";
     private boolean isTransitioning = false;
     private boolean fadingOut = false;
     private String nextMapName = null;
@@ -158,6 +159,12 @@ public class GameScreen implements Screen {
     private Label coordLabel;
     private Label scoreLabel;
 
+    // Inventory components
+    private boolean inventoryActive = false;
+    private Table inventoryTable;
+    private Label inventoryStatusLabel;
+    private TextButton inventoryEquipButton;
+
     public GameScreen(CompsGame game, String username) {
         this.game = game;
         this.player = new Player(username);
@@ -166,7 +173,7 @@ public class GameScreen implements Screen {
         this.camera = new OrthographicCamera();
         this.shapeRenderer = new ShapeRenderer();
 
-        map = new TmxMapLoader().load("map/map-upnvj.tmx");
+        map = new TmxMapLoader().load("map/Map UPNVJ.tmx");
         mapRenderer = new OrthogonalTiledMapRenderer(map, game.batch);
 
 
@@ -424,6 +431,8 @@ public class GameScreen implements Screen {
         pauseMenuTable.setVisible(false); // Hidden by default
         uiStage.addActor(pauseMenuTable);
 
+        setupInventoryUi();
+
         // Initialize Quiz Textures
         quizBgTex = new Texture(Gdx.files.internal("quiz/qz-example.png"));
         qzA_NormalTex = new Texture(Gdx.files.internal("quiz/qz-button-A-normal.png"));
@@ -634,7 +643,7 @@ public class GameScreen implements Screen {
             return;
         }
 
-        currentMapName = saveData.mapName;
+        currentMapName = normalizeMapName(saveData.mapName);
         if (map != null) map.dispose();
         if (mapRenderer != null) mapRenderer.dispose();
         map = new TmxMapLoader().load(currentMapName);
@@ -661,10 +670,101 @@ public class GameScreen implements Screen {
         return npcName.toLowerCase().replace(" ", "");
     }
 
+    private String normalizeMapName(String mapName) {
+        if ("map/Map UPNVJ.tmx".equals(mapName)) {
+            return "map/Map UPNVJ.tmx";
+        }
+        return mapName;
+    }
+
     private boolean isInteractKeyJustPressed() {
         return Gdx.input.isKeyJustPressed(Input.Keys.ENTER)
-            || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
-            || Gdx.input.isKeyJustPressed(Input.Keys.E);
+            || Gdx.input.isKeyJustPressed(Input.Keys.SPACE);
+    }
+
+    private void setupInventoryUi() {
+        inventoryTable = new Table();
+        inventoryTable.setFillParent(true);
+        inventoryTable.center();
+        inventoryTable.setVisible(false);
+
+        Table panel = new Table();
+        panel.setBackground(skin.newDrawable("white", new Color(0.05f, 0.07f, 0.09f, 0.92f)));
+        panel.pad(18f);
+
+        Label titleLabel = new Label("Inventory", skin, "white");
+        TextButton closeButton = new TextButton("X", skin);
+        closeButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                closeInventory();
+            }
+        });
+
+        Table titleRow = new Table();
+        titleRow.add(titleLabel).left().expandX();
+        titleRow.add(closeButton).size(44f, 36f).right();
+        panel.add(titleRow).width(360f).row();
+
+        inventoryStatusLabel = new Label("", skin, "white");
+        inventoryStatusLabel.setWrap(true);
+        panel.add(inventoryStatusLabel).width(360f).padTop(20f).left().row();
+
+        inventoryEquipButton = new TextButton("Equip", skin);
+        inventoryEquipButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (!completedNpcQuizzes.contains("almet")) return;
+
+                almetEquipped = !almetEquipped;
+                saveProgress();
+                updateInventoryUi();
+            }
+        });
+        panel.add(inventoryEquipButton).width(180f).height(46f).padTop(16f).left();
+
+        inventoryTable.add(panel);
+        uiStage.addActor(inventoryTable);
+    }
+
+    private void handleInventoryKey() {
+        if (!Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+            return;
+        }
+
+        if (inventoryActive) {
+            closeInventory();
+        } else if (!quizActive && !showCustomDialog && !npcDialogActive && !hintActive && !isPaused && !isTransitioning) {
+            openInventory();
+        }
+    }
+
+    private void openInventory() {
+        inventoryActive = true;
+        updateInventoryUi();
+        inventoryTable.setVisible(true);
+        pauseButton.setVisible(false);
+    }
+
+    private void closeInventory() {
+        inventoryActive = false;
+        inventoryTable.setVisible(false);
+        if (!isPaused && !quizActive && !npcDialogActive && !hintActive) {
+            pauseButton.setVisible(true);
+        }
+    }
+
+    private void updateInventoryUi() {
+        boolean almetUnlocked = completedNpcQuizzes.contains("almet");
+        if (almetUnlocked) {
+            inventoryStatusLabel.setText("Jas Almamater\nStatus: " + (almetEquipped ? "Dipakai" : "Belum dipakai"));
+            inventoryEquipButton.setText(almetEquipped ? "Unequip" : "Equip");
+            inventoryEquipButton.setDisabled(false);
+        } else {
+            inventoryStatusLabel.setText("Jas Almamater\nStatus: Terkunci\nButuh minimal " + ALMET_UNLOCK_SCORE + " poin dan selesaikan quiz Almet.");
+            inventoryEquipButton.setText("Locked");
+            inventoryEquipButton.setDisabled(true);
+        }
     }
 
     private void handleBackKey() {
@@ -672,7 +772,9 @@ public class GameScreen implements Screen {
             return;
         }
 
-        if (showCustomDialog) {
+        if (inventoryActive) {
+            closeInventory();
+        } else if (showCustomDialog) {
             showCustomDialog = false;
         } else if (npcDialogActive) {
             closeNpcDialogueFlow();
@@ -741,6 +843,7 @@ public class GameScreen implements Screen {
     @Override
     public void render(float delta) {
         handleBackKey();
+        handleInventoryKey();
 
         if (coordLabel != null) {
             int tileX = (int) (playerPos.x / TILE_SIZE);
@@ -751,9 +854,11 @@ public class GameScreen implements Screen {
             scoreLabel.setText("Score: " + player.getTotalScore());
         }
 
-        if (!quizActive && !showCustomDialog && !npcDialogActive && !hintActive && !isPaused && !isTransitioning) {
+        if (!inventoryActive && !quizActive && !showCustomDialog && !npcDialogActive && !hintActive && !isPaused && !isTransitioning) {
             handleInput(delta);
             update(delta);
+        } else if (inventoryActive) {
+            updateInventoryUi();
         } else if (showCustomDialog && !isPaused) {
             if (isInteractKeyJustPressed()) {
                 showCustomDialog = false;
@@ -803,7 +908,7 @@ public class GameScreen implements Screen {
         }
 
         // Render NPCs based on current map
-        if ("map/map-upnvj.tmx".equals(currentMapName)) {
+        if ("map/Map UPNVJ.tmx".equals(currentMapName)) {
             TextureRegion npcFrame = idleDown.getKeyFrame(stateTime, true);
             game.batch.draw(npcFrame, npcPos.x, npcPos.y, 16, 32);
 
@@ -871,7 +976,7 @@ public class GameScreen implements Screen {
 
 
         // Draw pause dim overlay
-        if (isPaused || quizActive || npcDialogActive || hintActive) {
+        if (isPaused || quizActive || npcDialogActive || hintActive || inventoryActive) {
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
             shapeRenderer.setProjectionMatrix(uiStage.getCamera().combined);
@@ -995,7 +1100,7 @@ public class GameScreen implements Screen {
     }
 
     private TiledMapTileLayer getMinimapLayer() {
-        if ("map/map-upnvj.tmx".equals(currentMapName)) {
+        if ("map/Map UPNVJ.tmx".equals(currentMapName)) {
             return (TiledMapTileLayer) map.getLayers().get("Ground");
         } else if ("map/SelasarFIK.tmx".equals(currentMapName)) {
             return (TiledMapTileLayer) map.getLayers().get("Tile Layer 1");
@@ -1055,7 +1160,7 @@ public class GameScreen implements Screen {
     }
 
     private void checkInteraction() {
-        if ("map/map-upnvj.tmx".equals(currentMapName)) {
+        if ("map/Map UPNVJ.tmx".equals(currentMapName)) {
             if (playerPos.dst(npcPos) <= TILE_SIZE * 1.5f) {
                 currentDialogText = "Adam: Halo! Selamat datang di COMPS to Life. Jelajahi area sekitar untuk menemukan NPC lainnya!";
                 dialogLabel.setText(currentDialogText);
@@ -1131,7 +1236,7 @@ public class GameScreen implements Screen {
         int cellY = (int) (y / TILE_SIZE);
 
         // Check if there is an NPC at this cell (cellX, cellY)
-        if ("map/map-upnvj.tmx".equals(currentMapName)) {
+        if ("map/Map UPNVJ.tmx".equals(currentMapName)) {
             if (cellX == 48 && cellY == 63) return false; // npcPos (Adam)
             if (cellX == 48 && cellY == 65) return false; // npcAlmetPos
             if (cellX == 90 && cellY == 114) return false; // npcArkaPos
@@ -1162,7 +1267,7 @@ public class GameScreen implements Screen {
             }
         }
 
-        if ("map/map-upnvj.tmx".equals(currentMapName)) {
+        if ("map/Map UPNVJ.tmx".equals(currentMapName)) {
             // Override transition portal coordinates to be passable
             if (cellX == 80 && (cellY >= 136 && cellY <= 138)) {
                 return true;
@@ -1171,6 +1276,11 @@ public class GameScreen implements Screen {
             TiledMapTileLayer blockLayer = (TiledMapTileLayer) map.getLayers().get("Block");
             if (layer == null) return true;
             if (cellX < 0 || cellX >= layer.getWidth() || cellY < 0 || cellY >= layer.getHeight()) return false;
+
+            if (isOccupiedTileLayerCell("Building", cellX, cellY)) return false;
+            if (isOccupiedTileLayerCell("Bbuilding 2", cellX, cellY)) return false;
+            if (isOccupiedTileLayerCell("Building Acc", cellX, cellY)) return false;
+            if (isOccupiedTileLayerCell("Vehicle", cellX, cellY)) return false;
 
             if (blockLayer != null && blockLayer.getCell(cellX, cellY) != null) return false;
             if (layer.getCell(cellX, cellY) == null) return false;
@@ -1225,10 +1335,20 @@ public class GameScreen implements Screen {
         return true;
     }
 
+    private boolean isOccupiedTileLayerCell(String layerName, int cellX, int cellY) {
+        TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get(layerName);
+        return layer != null
+                && cellX >= 0
+                && cellY >= 0
+                && cellX < layer.getWidth()
+                && cellY < layer.getHeight()
+                && layer.getCell(cellX, cellY) != null;
+    }
+
     private void checkMapTransition() {
         int tileX = (int) (playerPos.x / TILE_SIZE);
         int tileY = (int) (playerPos.y / TILE_SIZE);
-        if ("map/map-upnvj.tmx".equals(currentMapName)) {
+        if ("map/Map UPNVJ.tmx".equals(currentMapName)) {
             if (tileX == 80) {
                 if (tileY == 136) {
                     // Spawn at (11, 21)
@@ -1245,11 +1365,11 @@ public class GameScreen implements Screen {
             // Exit back to UPNVJ map when stepping on the door/entrance tiles (x <= 10, y = 19..21)
             if (tileX <= 10 && (tileY >= 19 && tileY <= 21)) {
                 if (tileY == 21) {
-                    startMapTransition("map/map-upnvj.tmx", new Vector2(80 * TILE_SIZE, 136 * TILE_SIZE));
+                    startMapTransition("map/Map UPNVJ.tmx", new Vector2(80 * TILE_SIZE, 136 * TILE_SIZE));
                 } else if (tileY == 20) {
-                    startMapTransition("map/map-upnvj.tmx", new Vector2(80 * TILE_SIZE, 137 * TILE_SIZE));
+                    startMapTransition("map/Map UPNVJ.tmx", new Vector2(80 * TILE_SIZE, 137 * TILE_SIZE));
                 } else {
-                    startMapTransition("map/map-upnvj.tmx", new Vector2(80 * TILE_SIZE, 138 * TILE_SIZE));
+                    startMapTransition("map/Map UPNVJ.tmx", new Vector2(80 * TILE_SIZE, 138 * TILE_SIZE));
                 }
             }
             // Transition to classroom map when stepping on coordinates (55-56, 54..56) in Selasar
@@ -1298,7 +1418,7 @@ public class GameScreen implements Screen {
     }
 
     private void drawMapIndicators() {
-        if ("map/map-upnvj.tmx".equals(currentMapName)) {
+        if ("map/Map UPNVJ.tmx".equals(currentMapName)) {
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
             shapeRenderer.setProjectionMatrix(camera.combined);
@@ -1317,7 +1437,7 @@ public class GameScreen implements Screen {
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             // Black color with 50% opacity for marker
             shapeRenderer.setColor(new Color(0f, 0f, 0f, 0.5f));
-            
+
             // Entrance to room (55..56, 54..56)
             shapeRenderer.rect(55 * TILE_SIZE, 54 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             shapeRenderer.rect(55 * TILE_SIZE, 55 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -1325,14 +1445,14 @@ public class GameScreen implements Screen {
             shapeRenderer.rect(56 * TILE_SIZE, 54 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             shapeRenderer.rect(56 * TILE_SIZE, 55 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             shapeRenderer.rect(56 * TILE_SIZE, 56 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            
+
             // Exit back to UPNVJ map (0..10, 19..21)
             for (int x = 0; x <= 10; x++) {
                 shapeRenderer.rect(x * TILE_SIZE, 19 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
                 shapeRenderer.rect(x * TILE_SIZE, 20 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
                 shapeRenderer.rect(x * TILE_SIZE, 21 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             }
-            
+
             shapeRenderer.end();
             Gdx.gl.glDisable(GL20.GL_BLEND);
         } else if ("map/Denah Ruangan Kelas.tmx".equals(currentMapName)) {
@@ -1342,7 +1462,7 @@ public class GameScreen implements Screen {
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             // Black color with 50% opacity for marker
             shapeRenderer.setColor(new Color(0f, 0f, 0f, 0.5f));
-            
+
             // Exit door of the classroom (27..28, 36..38)
             shapeRenderer.rect(27 * TILE_SIZE, 36 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             shapeRenderer.rect(27 * TILE_SIZE, 37 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -1350,7 +1470,7 @@ public class GameScreen implements Screen {
             shapeRenderer.rect(28 * TILE_SIZE, 36 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             shapeRenderer.rect(28 * TILE_SIZE, 37 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             shapeRenderer.rect(28 * TILE_SIZE, 38 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            
+
             shapeRenderer.end();
             Gdx.gl.glDisable(GL20.GL_BLEND);
         }
@@ -1890,7 +2010,7 @@ public class GameScreen implements Screen {
             npcQuizButtonsTable.add(npcQzButtonA).size(btnWidth, btnHeight).padRight(dialogWidth * 0.03f);
             npcQuizButtonsTable.add(npcQzButtonB).size(btnWidth, btnHeight).padRight(dialogWidth * 0.03f);
             npcQuizButtonsTable.add(npcQzButtonC).size(btnWidth, btnHeight);
-            
+
             npcQuizButtonsTable.pack();
 
             float tableWidth = npcQuizButtonsTable.getWidth();
@@ -1898,7 +2018,7 @@ public class GameScreen implements Screen {
             float tableX = (width - tableWidth) / 2f;
             float tableY = imgY - tableHeight - height * 0.02f;
             npcQuizButtonsTable.setPosition(tableX, tableY);
-            
+
             if (activeNpcDialog.inQuiz) {
                 npcQuizButtonsTable.setVisible(true);
             } else {
