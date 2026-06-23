@@ -107,6 +107,11 @@ public class GameScreen implements Screen {
     private ImageButton npcQzButtonB;
     private ImageButton npcQzButtonC;
 
+    // Hint UI and State
+    private Image hintImage;
+    private Texture hintTexture = null;
+    private boolean hintActive = false;
+
     private Texture dialogBoxTexture;
     private Label dialogLabel;
     private String currentDialogText = "";
@@ -171,11 +176,11 @@ public class GameScreen implements Screen {
         this.extraNpcs = new ArrayList<>();
         this.extraNpcs.add(new GameNPC("Ayu", 80f, 115f, "sprite/ayu.png", "Ayu: Halo! Aku Ayu. Jangan lupa untuk mengerjakan tugas kuliahmu tepat waktu ya!", TILE_SIZE, false));
         this.extraNpcs.add(new GameNPC("Nadhifa", 95f, 121f, "sprite/nadhifa.png", "Nadhifa: Hai! Aku Nadhifa. Selamat datang di Fakultas Ilmu Komputer!", TILE_SIZE, false));
-        this.extraNpcs.add(new GameNPC("Nadia", 14f, 17f, "sprite/nadia.png", "Nadia: Halo! Aku Nadia. Senang sekali melihatmu bersemangat menjelajahi kampus ini!", TILE_SIZE, true));
-        this.extraNpcs.add(new GameNPC("Pak Hendra", 45f, 40f, "sprite/pak-hendra.png", "Pak Hendra: Selamat pagi mahasiswa sekalian. Ingat, kegagalan hari ini adalah awal dari kesuksesan!", TILE_SIZE, true));
+        this.extraNpcs.add(new GameNPC("Nadia", 20f, 25f, "sprite/nadia.png", "Nadia: Halo! Aku Nadia. Senang sekali melihatmu bersemangat menjelajahi kampus ini!", TILE_SIZE, true));
+        this.extraNpcs.add(new GameNPC("Pak Hendra", 53f, 52f, "sprite/pak-hendra.png", "Pak Hendra: Selamat pagi mahasiswa sekalian. Ingat, kegagalan hari ini adalah awal dari kesuksesan!", TILE_SIZE, true));
         this.extraNpcs.add(new GameNPC("Reyhan", 76f, 104f, "sprite/reyhan.png", "Reyhan: Hei! Aku Reyhan. Sudahkah kamu memeriksa jadwal kuliah hari ini?", TILE_SIZE, false));
-        this.extraNpcs.add(new GameNPC("Rizky", 40f, 17f, "sprite/rizky.png", "Rizky: Halo bro! Aku Rizky. Jangan lupa minum air putih yang cukup ya kalau sedang coding.", TILE_SIZE, true));
-        this.extraNpcs.add(new GameNPC("Salsa", 42f, 44f, "sprite/salsa.png", "Salsa: Hai! Aku Salsa. Semoga harimu menyenangkan dan perkuliahanmu berjalan lancar!", TILE_SIZE, true));
+        this.extraNpcs.add(new GameNPC("Rizky", 49f, 28f, "sprite/rizky.png", "Rizky: Halo bro! Aku Rizky. Jangan lupa minum air putih yang cukup ya kalau sedang coding.", TILE_SIZE, true));
+        this.extraNpcs.add(new GameNPC("Salsa", 45f, 57f, "sprite/salsa.png", "Salsa: Hai! Aku Salsa. Semoga harimu menyenangkan dan perkuliahanmu berjalan lancar!", TILE_SIZE, true));
         this.extraNpcs.add(new GameNPC("Tasya", 75f, 70f, "sprite/tasya.png", "Tasya: Halo! Aku Tasya. Perpustakaan ada di dekat sini, belajarlah dengan rajin!", TILE_SIZE, false));
         this.extraNpcs.add(new GameNPC("Zaki", 107f, 106f, "sprite/zaki.png", "Zaki: Yo! Aku Zaki. Main game boleh saja, tapi jangan sampai melupakan tugas utama kita sebagai mahasiswa.", TILE_SIZE, false));
 
@@ -585,6 +590,11 @@ public class GameScreen implements Screen {
         uiStage.addActor(npcDialogImage);
         uiStage.addActor(npcQuizButtonsTable);
 
+        // Initialize Hint Image overlay
+        hintImage = new Image();
+        hintImage.setVisible(false);
+        uiStage.addActor(hintImage);
+
         rebuildNpcDialogLayout(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
     }
 
@@ -607,7 +617,7 @@ public class GameScreen implements Screen {
             coordLabel.setText("X: " + tileX + ", Y: " + tileY);
         }
 
-        if (!quizActive && !showCustomDialog && !npcDialogActive && !isPaused && !isTransitioning) {
+        if (!quizActive && !showCustomDialog && !npcDialogActive && !hintActive && !isPaused && !isTransitioning) {
             handleInput(delta);
             update(delta);
         } else if (showCustomDialog && !isPaused) {
@@ -617,6 +627,10 @@ public class GameScreen implements Screen {
         } else if (npcDialogActive && !isPaused) {
             if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
                 advanceNpcDialogueFlow();
+            }
+        } else if (hintActive && !isPaused) {
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+                closeHint();
             }
         } else if (quizActive && !isPaused) {
             if (quizAnswered) {
@@ -655,8 +669,7 @@ public class GameScreen implements Screen {
         }
 
         // Render NPCs based on current map
-        boolean isSelasar = "map/SelasarFIK.tmx".equals(currentMapName);
-        if (!isSelasar) {
+        if ("map/map-upnvj.tmx".equals(currentMapName)) {
             TextureRegion npcFrame = idleDown.getKeyFrame(stateTime, true);
             game.batch.draw(npcFrame, npcPos.x, npcPos.y, 16, 32);
 
@@ -682,7 +695,7 @@ public class GameScreen implements Screen {
                     }
                 }
             }
-        } else {
+        } else if ("map/SelasarFIK.tmx".equals(currentMapName)) {
             // Render extra Selasar NPCs
             if (extraNpcs != null) {
                 for (GameNPC npc : extraNpcs) {
@@ -722,7 +735,7 @@ public class GameScreen implements Screen {
 
 
         // Draw pause dim overlay
-        if (isPaused || quizActive || npcDialogActive) {
+        if (isPaused || quizActive || npcDialogActive || hintActive) {
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
             shapeRenderer.setProjectionMatrix(uiStage.getCamera().combined);
@@ -847,8 +860,7 @@ public class GameScreen implements Screen {
     }
 
     private void checkInteraction() {
-        boolean isSelasar = "map/SelasarFIK.tmx".equals(currentMapName);
-        if (!isSelasar) {
+        if ("map/map-upnvj.tmx".equals(currentMapName)) {
             if (playerPos.dst(npcPos) <= TILE_SIZE * 1.5f) {
                 currentDialogText = "Adam: Halo! Selamat datang di COMPS to Life. Jelajahi area sekitar untuk menemukan NPC lainnya!";
                 dialogLabel.setText(currentDialogText);
@@ -874,8 +886,16 @@ public class GameScreen implements Screen {
                     }
                 }
             }
-        } else {
-            if (extraNpcs != null) {
+        } else if ("map/SelasarFIK.tmx".equals(currentMapName)) {
+            if (isNearTile(49, 58) || isNearTile(50, 58)) {
+                showHint("hint/Banner Pengumuman-Depan Ruang Tata Usaha (TU).png");
+            } else if (isNearTile(38, 58) || isNearTile(39, 58)) {
+                showHint("hint/Brosur Kompetisi-Sudut Lapangan Serbaguna UPNVJ.png");
+            } else if (isNearTile(37, 48)) {
+                showHint("hint/Buku Panduan-Selasar Kampus.png");
+            } else if (isNearTile(51, 48)) {
+                showHint("hint/Plakat-Ruang Dekan.png");
+            } else if (extraNpcs != null) {
                 for (GameNPC npc : extraNpcs) {
                     if (npc.isOnSelasar() && npc.isNearPlayer(playerPos, TILE_SIZE)) {
                         String key = npc.getName().toLowerCase().replace(" ", "");
@@ -890,12 +910,48 @@ public class GameScreen implements Screen {
                     }
                 }
             }
+        } else if ("map/Denah Ruangan Kelas.tmx".equals(currentMapName)) {
+            if (isNearTile(12, 36)) {
+                showHint("hint/Buku Modul-Ruang Kelas Gedung Desar.png");
+            }
         }
     }
 
     private boolean isCellPassable(float x, float y) {
         int cellX = (int) (x / TILE_SIZE);
         int cellY = (int) (y / TILE_SIZE);
+
+        // Check if there is an NPC at this cell (cellX, cellY)
+        if ("map/map-upnvj.tmx".equals(currentMapName)) {
+            if (cellX == 48 && cellY == 63) return false; // npcPos (Adam)
+            if (cellX == 48 && cellY == 65) return false; // npcAlmetPos
+            if (cellX == 90 && cellY == 114) return false; // npcArkaPos
+            if (cellX == 80 && cellY == 132) return false; // npcAryaPos
+
+            if (extraNpcs != null) {
+                for (GameNPC npc : extraNpcs) {
+                    if (!npc.isOnSelasar()) {
+                        int npcX = (int) (npc.position.x / TILE_SIZE);
+                        int npcY = (int) (npc.position.y / TILE_SIZE);
+                        if (cellX == npcX && cellY == npcY) {
+                            return false;
+                        }
+                    }
+                }
+            }
+        } else if ("map/SelasarFIK.tmx".equals(currentMapName)) {
+            if (extraNpcs != null) {
+                for (GameNPC npc : extraNpcs) {
+                    if (npc.isOnSelasar()) {
+                        int npcX = (int) (npc.position.x / TILE_SIZE);
+                        int npcY = (int) (npc.position.y / TILE_SIZE);
+                        if (cellX == npcX && cellY == npcY) {
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
 
         if ("map/map-upnvj.tmx".equals(currentMapName)) {
             // Override transition portal coordinates to be passable
@@ -915,6 +971,9 @@ public class GameScreen implements Screen {
             if (cellX <= 13 && (cellY >= 19 && cellY <= 21)) {
                 return true;
             }
+            if ((cellX == 55 || cellX == 56) && (cellY >= 54 && cellY <= 56)) {
+                return true;
+            }
             TiledMapTileLayer layer1 = (TiledMapTileLayer) map.getLayers().get("Tile Layer 1");
             if (layer1 == null) return true;
             if (cellX < 0 || cellX >= layer1.getWidth() || cellY < 0 || cellY >= layer1.getHeight()) return false;
@@ -928,6 +987,29 @@ public class GameScreen implements Screen {
 
             TiledMapTileLayer layer4 = (TiledMapTileLayer) map.getLayers().get("Tile Layer 4");
             if (layer4 != null && layer4.getCell(cellX, cellY) != null) return false;
+
+            return true;
+        } else if ("map/Denah Ruangan Kelas.tmx".equals(currentMapName)) {
+            // Override door/transition coordinates to be passable
+            if (cellX >= 27 && (cellY >= 36 && cellY <= 38)) {
+                return true;
+            }
+            TiledMapTileLayer layer4 = (TiledMapTileLayer) map.getLayers().get("Tile Layer 4");
+            if (layer4 == null) return true;
+            if (cellX < 0 || cellX >= layer4.getWidth() || cellY < 0 || cellY >= layer4.getHeight()) return false;
+
+            // Ground floor cell must not be empty
+            if (layer4.getCell(cellX, cellY) == null) return false;
+
+            // Check Layer 1 (walls), Layer 2 (furniture, doors), and Layer 3 (blackboard, doors) for blocks
+            TiledMapTileLayer layer1 = (TiledMapTileLayer) map.getLayers().get("Tile Layer 1");
+            if (layer1 != null && layer1.getCell(cellX, cellY) != null) return false;
+
+            TiledMapTileLayer layer2 = (TiledMapTileLayer) map.getLayers().get("Tile Layer 2");
+            if (layer2 != null && layer2.getCell(cellX, cellY) != null) return false;
+
+            TiledMapTileLayer layer3 = (TiledMapTileLayer) map.getLayers().get("Tile Layer 3");
+            if (layer3 != null && layer3.getCell(cellX, cellY) != null) return false;
 
             return true;
         }
@@ -959,6 +1041,27 @@ public class GameScreen implements Screen {
                     startMapTransition("map/map-upnvj.tmx", new Vector2(80 * TILE_SIZE, 137 * TILE_SIZE));
                 } else {
                     startMapTransition("map/map-upnvj.tmx", new Vector2(80 * TILE_SIZE, 138 * TILE_SIZE));
+                }
+            }
+            // Transition to classroom map when stepping on coordinates (55-56, 54..56) in Selasar
+            if ((tileX == 55 || tileX == 56) && (tileY >= 54 && tileY <= 56)) {
+                if (tileY == 54) {
+                    startMapTransition("map/Denah Ruangan Kelas.tmx", new Vector2(26 * TILE_SIZE, 38 * TILE_SIZE));
+                } else if (tileY == 55) {
+                    startMapTransition("map/Denah Ruangan Kelas.tmx", new Vector2(26 * TILE_SIZE, 37 * TILE_SIZE));
+                } else {
+                    startMapTransition("map/Denah Ruangan Kelas.tmx", new Vector2(26 * TILE_SIZE, 36 * TILE_SIZE));
+                }
+            }
+        } else if ("map/Denah Ruangan Kelas.tmx".equals(currentMapName)) {
+            // Exit back to Selasar map when stepping on classroom door tiles (x >= 27, y = 36..38 in LibGDX)
+            if (tileX >= 27 && (tileY >= 36 && tileY <= 38)) {
+                if (tileY == 36) {
+                    startMapTransition("map/SelasarFIK.tmx", new Vector2(54 * TILE_SIZE, 56 * TILE_SIZE));
+                } else if (tileY == 37) {
+                    startMapTransition("map/SelasarFIK.tmx", new Vector2(54 * TILE_SIZE, 55 * TILE_SIZE));
+                } else {
+                    startMapTransition("map/SelasarFIK.tmx", new Vector2(54 * TILE_SIZE, 54 * TILE_SIZE));
                 }
             }
         }
@@ -995,6 +1098,49 @@ public class GameScreen implements Screen {
             shapeRenderer.rect(80 * TILE_SIZE, 136 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             shapeRenderer.rect(80 * TILE_SIZE, 137 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             shapeRenderer.rect(80 * TILE_SIZE, 138 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            shapeRenderer.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+        } else if ("map/SelasarFIK.tmx".equals(currentMapName)) {
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapeRenderer.setProjectionMatrix(camera.combined);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            // Black color with 50% opacity for marker
+            shapeRenderer.setColor(new Color(0f, 0f, 0f, 0.5f));
+            
+            // Entrance to room (55..56, 54..56)
+            shapeRenderer.rect(55 * TILE_SIZE, 54 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            shapeRenderer.rect(55 * TILE_SIZE, 55 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            shapeRenderer.rect(55 * TILE_SIZE, 56 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            shapeRenderer.rect(56 * TILE_SIZE, 54 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            shapeRenderer.rect(56 * TILE_SIZE, 55 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            shapeRenderer.rect(56 * TILE_SIZE, 56 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            
+            // Exit back to UPNVJ map (0..10, 19..21)
+            for (int x = 0; x <= 10; x++) {
+                shapeRenderer.rect(x * TILE_SIZE, 19 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                shapeRenderer.rect(x * TILE_SIZE, 20 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                shapeRenderer.rect(x * TILE_SIZE, 21 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+            
+            shapeRenderer.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+        } else if ("map/Denah Ruangan Kelas.tmx".equals(currentMapName)) {
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapeRenderer.setProjectionMatrix(camera.combined);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            // Black color with 50% opacity for marker
+            shapeRenderer.setColor(new Color(0f, 0f, 0f, 0.5f));
+            
+            // Exit door of the classroom (27..28, 36..38)
+            shapeRenderer.rect(27 * TILE_SIZE, 36 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            shapeRenderer.rect(27 * TILE_SIZE, 37 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            shapeRenderer.rect(27 * TILE_SIZE, 38 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            shapeRenderer.rect(28 * TILE_SIZE, 36 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            shapeRenderer.rect(28 * TILE_SIZE, 37 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            shapeRenderer.rect(28 * TILE_SIZE, 38 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            
             shapeRenderer.end();
             Gdx.gl.glDisable(GL20.GL_BLEND);
         }
@@ -1040,6 +1186,7 @@ public class GameScreen implements Screen {
         uiStage.getViewport().update(width, height, true);
         rebuildQuizTable(width, height);
         rebuildNpcDialogLayout(width, height);
+        rebuildHintLayout(width, height);
     }
 
     @Override
@@ -1099,6 +1246,10 @@ public class GameScreen implements Screen {
 
         if (activeNpcDialog != null && activeNpcDialog.currentTexture != null) {
             activeNpcDialog.currentTexture.dispose();
+        }
+
+        if (hintTexture != null) {
+            hintTexture.dispose();
         }
 
         uiStage.dispose();
@@ -1301,7 +1452,7 @@ public class GameScreen implements Screen {
 
         npcDialogueFlows.put("pakhendra", new NpcDialogueFlow("Pak Hendra",
             new String[]{"dialog/pakhendra/Pak_Hendra-1.png", "dialog/pakhendra/Pak_Hendra-2.png"},
-            "dialog/pakhendra/Pak_Hendra -3-QzJwb=C.png", 'C',
+            "dialog/pakhendra/Pak_Hendra -3-QzJwb=C.png", 'B',
             "dialog/pakhendra/Pak_Hendra-4-right.png", "dialog/pakhendra/Pak_Hendra-4-wrong.png",
             new String[]{"dialog/pakhendra/Pak_Hendra 6.png"}
         ));
@@ -1447,7 +1598,7 @@ public class GameScreen implements Screen {
         activeNpcDialog.quizAnswered = true;
         npcQuizButtonsTable.setVisible(false);
 
-        boolean isCorrect = (answer == 'A');
+        boolean isCorrect = (answer == flow.answer);
         activeNpcDialog.quizCorrect = isCorrect;
 
         if (activeNpcDialog.currentTexture != null) {
@@ -1545,5 +1696,54 @@ public class GameScreen implements Screen {
             npcDialogImage.setPosition(imgX, imgY);
             npcQuizButtonsTable.setVisible(false);
         }
+    }
+
+    private boolean isNearTile(float tileX, float tileY) {
+        return playerPos.dst(tileX * TILE_SIZE, tileY * TILE_SIZE) <= TILE_SIZE * 1.5f;
+    }
+
+    private void showHint(String imagePath) {
+        if (hintTexture != null) {
+            hintTexture.dispose();
+        }
+        clickSound.play(1.0f);
+        hintTexture = new Texture(Gdx.files.internal(imagePath));
+        hintTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        hintImage.setDrawable(new TextureRegionDrawable(new TextureRegion(hintTexture)));
+        hintActive = true;
+        hintImage.setVisible(true);
+        pauseButton.setVisible(false); // Hide pause button while viewing hint
+        rebuildHintLayout(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+    }
+
+    private void closeHint() {
+        hintActive = false;
+        hintImage.setVisible(false);
+        pauseButton.setVisible(true);
+        if (hintTexture != null) {
+            hintTexture.dispose();
+            hintTexture = null;
+        }
+    }
+
+    private void rebuildHintLayout(float width, float height) {
+        if (!hintActive || hintTexture == null) return;
+
+        float imgWidth = hintTexture.getWidth();
+        float imgHeight = hintTexture.getHeight();
+        float aspect = imgWidth / imgHeight;
+
+        // Cover 80% of screen width by default
+        float targetWidth = width * 0.8f;
+        float targetHeight = targetWidth / aspect;
+
+        // If it takes up too much height, scale down to fit 80% of screen height
+        if (targetHeight > height * 0.8f) {
+            targetHeight = height * 0.8f;
+            targetWidth = targetHeight * aspect;
+        }
+
+        hintImage.setSize(targetWidth, targetHeight);
+        hintImage.setPosition((width - targetWidth) / 2f, (height - targetHeight) / 2f);
     }
 }
