@@ -1673,8 +1673,8 @@ public class GameScreen implements Screen {
         ));
 
         npcDialogueFlows.put("reyhan", new NpcDialogueFlow("Reyhan",
-            new String[]{"dialog/reyhan/Reyhan-1.png"},
-            "dialog/reyhan/Reyhan-2.png", 'A',
+            new String[]{"dialog/reyhan/Reyhan-1.png", "dialog/reyhan/Reyhan-2.png"},
+            "dialog/reyhan/Reyhan-3-QzJwb=A-1.png", 'A',
             "dialog/reyhan/Reyhan-4-right.png", "dialog/reyhan/Reyhan-4-wrong.png",
             new String[]{}
         ));
