@@ -461,7 +461,7 @@ public class GameScreen implements Screen {
         Table almetButtonTable = new Table();
         almetButtonTable.setFillParent(true);
         almetButtonTable.bottom().left().pad(20);
-        almetButtonTable.add(buttonX).size(120, 120);
+        almetButtonTable.add(buttonX).size(240, 240);
         uiStage.addActor(almetButtonTable);
 
         // Setup Coordinate Indicator (Top-Left)
