@@ -1644,12 +1644,14 @@ public class GameScreen implements Screen {
             if (width > 16) {
                 int frameWidth = width / 4;
                 TextureRegion[][] tmp = TextureRegion.split(this.texture, frameWidth, height);
-                int frameIndex = 0; // DOWN by default
-                if ("atas".equalsIgnoreCase(direction)) {
+                int frameIndex = 3; // DOWN ("bawah") by default
+                if ("kanan".equalsIgnoreCase(direction)) {
+                    frameIndex = 0;
+                } else if ("atas".equalsIgnoreCase(direction)) {
                     frameIndex = 1;
                 } else if ("kiri".equalsIgnoreCase(direction)) {
                     frameIndex = 2;
-                } else if ("kanan".equalsIgnoreCase(direction)) {
+                } else if ("bawah".equalsIgnoreCase(direction)) {
                     frameIndex = 3;
                 }
                 this.region = tmp[0][frameIndex];
