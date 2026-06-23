@@ -971,21 +971,14 @@ public class GameScreen implements Screen {
 
         Animation<TextureRegion> animToDraw = currentAnimation;
         if (almetEquipped) {
-            if (isMoving) {
-                switch (lastDirection) {
-                    case LEFT: animToDraw = almetWalkLeft; break;
-                    case RIGHT: animToDraw = almetWalkRight; break;
-                    case UP: animToDraw = almetWalkUp; break;
-                    case DOWN: animToDraw = almetWalkDown; break;
-                }
-            } else {
-                switch (lastDirection) {
-                    case LEFT: animToDraw = almetIdleLeft; break;
-                    case RIGHT: animToDraw = almetIdleRight; break;
-                    case UP: animToDraw = almetIdleUp; break;
-                    case DOWN: animToDraw = almetIdleDown; break;
-                }
-            }
+            if (currentAnimation == walkLeft) animToDraw = almetWalkLeft;
+            else if (currentAnimation == walkRight) animToDraw = almetWalkRight;
+            else if (currentAnimation == walkUp) animToDraw = almetWalkUp;
+            else if (currentAnimation == walkDown) animToDraw = almetWalkDown;
+            else if (currentAnimation == idleLeft) animToDraw = almetIdleLeft;
+            else if (currentAnimation == idleRight) animToDraw = almetIdleRight;
+            else if (currentAnimation == idleUp) animToDraw = almetIdleUp;
+            else if (currentAnimation == idleDown) animToDraw = almetIdleDown;
         }
         TextureRegion currentFrame = animToDraw.getKeyFrame(stateTime, true);
         game.batch.draw(currentFrame, playerPos.x + playerOffsetX, playerPos.y, 16, 32);
