@@ -189,6 +189,79 @@ public class GameScreen implements Screen {
         this.extraNpcs.add(new GameNPC("Tasya", 75f, 70f, "sprite/tasya.png", "Tasya: Halo! Aku Tasya. Perpustakaan ada di dekat sini, belajarlah dengan rajin!", TILE_SIZE, false));
         this.extraNpcs.add(new GameNPC("Zaki", 107f, 106f, "sprite/zaki.png", "Zaki: Yo! Aku Zaki. Main game boleh saja, tapi jangan sampai melupakan tugas utama kita sebagai mahasiswa.", TILE_SIZE, false));
 
+        // Showcase/pajangan NPCs using sprite/npc.png (main map)
+        this.extraNpcs.add(new GameNPC("Showcase", 72f, 126f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 74f, 126f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kiri"));
+        this.extraNpcs.add(new GameNPC("Showcase", 59f, 109f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 57f, 110f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 57f, 110f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 57f, 112f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 57f, 114f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 57f, 116f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 61f, 110f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 61f, 112f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 61f, 114f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 61f, 116f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 59f, 105f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "atas"));
+        this.extraNpcs.add(new GameNPC("Showcase", 49f, 126f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 51f, 126f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kiri"));
+        this.extraNpcs.add(new GameNPC("Showcase", 75f, 159f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 75f, 157f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "atas"));
+        this.extraNpcs.add(new GameNPC("Showcase", 80f, 143f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 80f, 141f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 68f, 136f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 70f, 136f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kiri"));
+        this.extraNpcs.add(new GameNPC("Showcase", 58f, 130f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 60f, 130f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kiri"));
+        this.extraNpcs.add(new GameNPC("Showcase", 43f, 127f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 32f, 105f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 32f, 115f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 35f, 125f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 34f, 94f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "atas"));
+        this.extraNpcs.add(new GameNPC("Showcase", 34f, 96f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 30f, 64f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "atas"));
+        this.extraNpcs.add(new GameNPC("Showcase", 30f, 66f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 80f, 74f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 80f, 76f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "atas"));
+        this.extraNpcs.add(new GameNPC("Showcase", 48f, 57f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "atas"));
+        this.extraNpcs.add(new GameNPC("Showcase", 98f, 78f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 98f, 76f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 121f, 84f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 105f, 67f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "atas"));
+        this.extraNpcs.add(new GameNPC("Showcase", 105f, 69f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 118f, 61f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kiri"));
+        this.extraNpcs.add(new GameNPC("Showcase", 116f, 61f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 109f, 42f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kiri"));
+        this.extraNpcs.add(new GameNPC("Showcase", 107f, 42f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 101f, 107f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kiri"));
+        this.extraNpcs.add(new GameNPC("Showcase", 99f, 107f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 109f, 127f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 104f, 115f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 95f, 128f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 95f, 126f, "sprite/npc.png", null, TILE_SIZE, "map/map-upnvj.tmx", "atas"));
+
+        // Showcase/pajangan NPCs (SelasarFIK.tmx)
+        this.extraNpcs.add(new GameNPC("Showcase", 23f, 37f, "sprite/npc.png", null, TILE_SIZE, "map/SelasarFIK.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 17f, 35f, "sprite/npc.png", null, TILE_SIZE, "map/SelasarFIK.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 32f, 57f, "sprite/npc.png", null, TILE_SIZE, "map/SelasarFIK.tmx", "kiri"));
+        this.extraNpcs.add(new GameNPC("Showcase", 18f, 57f, "sprite/npc.png", null, TILE_SIZE, "map/SelasarFIK.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 20f, 57f, "sprite/npc.png", null, TILE_SIZE, "map/SelasarFIK.tmx", "kiri"));
+        this.extraNpcs.add(new GameNPC("Showcase", 41f, 52f, "sprite/npc.png", null, TILE_SIZE, "map/SelasarFIK.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 41f, 50f, "sprite/npc.png", null, TILE_SIZE, "map/SelasarFIK.tmx", "kiri"));
+        this.extraNpcs.add(new GameNPC("Showcase", 38f, 24f, "sprite/npc.png", null, TILE_SIZE, "map/SelasarFIK.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 46f, 24f, "sprite/npc.png", null, TILE_SIZE, "map/SelasarFIK.tmx", "kiri"));
+        this.extraNpcs.add(new GameNPC("Showcase", 45f, 39f, "sprite/npc.png", null, TILE_SIZE, "map/SelasarFIK.tmx", "kiri"));
+        this.extraNpcs.add(new GameNPC("Showcase", 24f, 31f, "sprite/npc.png", null, TILE_SIZE, "map/SelasarFIK.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 20f, 35f, "sprite/npc.png", null, TILE_SIZE, "map/SelasarFIK.tmx", "kanan"));
+
+        // Showcase/pajangan NPCs (Denah Ruangan Kelas.tmx)
+        this.extraNpcs.add(new GameNPC("Showcase", 10f, 21f, "sprite/npc.png", null, TILE_SIZE, "map/Denah Ruangan Kelas.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 11f, 21f, "sprite/npc.png", null, TILE_SIZE, "map/Denah Ruangan Kelas.tmx", "kiri"));
+        this.extraNpcs.add(new GameNPC("Showcase", 22f, 31f, "sprite/npc.png", null, TILE_SIZE, "map/Denah Ruangan Kelas.tmx", "kanan"));
+        this.extraNpcs.add(new GameNPC("Showcase", 20f, 31f, "sprite/npc.png", null, TILE_SIZE, "map/Denah Ruangan Kelas.tmx", "kiri"));
+        this.extraNpcs.add(new GameNPC("Showcase", 26f, 29f, "sprite/npc.png", null, TILE_SIZE, "map/Denah Ruangan Kelas.tmx", "bawah"));
+        this.extraNpcs.add(new GameNPC("Showcase", 26f, 27f, "sprite/npc.png", null, TILE_SIZE, "map/Denah Ruangan Kelas.tmx", "atas"));
+
         this.dialogBoxTexture = new Texture(Gdx.files.internal("dialog/dialog-box.png"));
 
         // Load Sound
@@ -1040,6 +1113,9 @@ public class GameScreen implements Screen {
             } else if (extraNpcs != null) {
                 for (GameNPC npc : extraNpcs) {
                     if ("map/map-upnvj.tmx".equals(npc.getMapName()) && npc.isNearPlayer(playerPos, TILE_SIZE)) {
+                        if (npc.getDialogText() == null) {
+                            continue;
+                        }
                         String key = normalizeNpcKey(npc.getName());
                         if (npcDialogueFlows.containsKey(key)) {
                             startNpcDialogueFlow(npc.getName());
@@ -1064,6 +1140,9 @@ public class GameScreen implements Screen {
             } else if (extraNpcs != null) {
                 for (GameNPC npc : extraNpcs) {
                     if ("map/SelasarFIK.tmx".equals(npc.getMapName()) && npc.isNearPlayer(playerPos, TILE_SIZE)) {
+                        if (npc.getDialogText() == null) {
+                            continue;
+                        }
                         String key = normalizeNpcKey(npc.getName());
                         if (npcDialogueFlows.containsKey(key)) {
                             startNpcDialogueFlow(npc.getName());
@@ -1082,6 +1161,9 @@ public class GameScreen implements Screen {
             } else if (extraNpcs != null) {
                 for (GameNPC npc : extraNpcs) {
                     if ("map/Denah Ruangan Kelas.tmx".equals(npc.getMapName()) && npc.isNearPlayer(playerPos, TILE_SIZE)) {
+                        if (npc.getDialogText() == null) {
+                            continue;
+                        }
                         String key = normalizeNpcKey(npc.getName());
                         if (npcDialogueFlows.containsKey(key)) {
                             startNpcDialogueFlow(npc.getName());
@@ -1535,21 +1617,20 @@ public class GameScreen implements Screen {
         private final String name;
         private final Vector2 position;
         private final Texture texture;
+        private final TextureRegion region;
         private final String dialogText;
         private final boolean onSelasar;
         private final String mapName;
 
         public GameNPC(String name, float tileX, float tileY, String texturePath, String dialogText, float tileSize, boolean onSelasar) {
-            this.name = name;
-            this.position = new Vector2(tileX * tileSize, tileY * tileSize);
-            this.texture = new Texture(Gdx.files.internal(texturePath));
-            this.texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-            this.dialogText = dialogText;
-            this.onSelasar = onSelasar;
-            this.mapName = onSelasar ? "map/SelasarFIK.tmx" : "map/map-upnvj.tmx";
+            this(name, tileX, tileY, texturePath, dialogText, tileSize, onSelasar ? "map/SelasarFIK.tmx" : "map/map-upnvj.tmx", "bawah");
         }
 
         public GameNPC(String name, float tileX, float tileY, String texturePath, String dialogText, float tileSize, String mapName) {
+            this(name, tileX, tileY, texturePath, dialogText, tileSize, mapName, "bawah");
+        }
+
+        public GameNPC(String name, float tileX, float tileY, String texturePath, String dialogText, float tileSize, String mapName, String direction) {
             this.name = name;
             this.position = new Vector2(tileX * tileSize, tileY * tileSize);
             this.texture = new Texture(Gdx.files.internal(texturePath));
@@ -1557,6 +1638,24 @@ public class GameScreen implements Screen {
             this.dialogText = dialogText;
             this.onSelasar = "map/SelasarFIK.tmx".equals(mapName);
             this.mapName = mapName;
+
+            int width = this.texture.getWidth();
+            int height = this.texture.getHeight();
+            if (width > 16) {
+                int frameWidth = width / 4;
+                TextureRegion[][] tmp = TextureRegion.split(this.texture, frameWidth, height);
+                int frameIndex = 0; // DOWN by default
+                if ("atas".equalsIgnoreCase(direction)) {
+                    frameIndex = 1;
+                } else if ("kiri".equalsIgnoreCase(direction)) {
+                    frameIndex = 2;
+                } else if ("kanan".equalsIgnoreCase(direction)) {
+                    frameIndex = 3;
+                }
+                this.region = tmp[0][frameIndex];
+            } else {
+                this.region = new TextureRegion(this.texture);
+            }
         }
 
         public String getName() {
@@ -1572,7 +1671,7 @@ public class GameScreen implements Screen {
         }
 
         public void draw(com.badlogic.gdx.graphics.g2d.SpriteBatch batch) {
-            batch.draw(texture, position.x, position.y, 16, 32);
+            batch.draw(region, position.x, position.y, 16, 32);
         }
 
         public boolean isNearPlayer(Vector2 playerPos, float tileSize) {
