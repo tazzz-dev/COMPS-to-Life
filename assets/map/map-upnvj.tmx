@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="128" height="200" tilewidth="16" tileheight="16" infinite="0" nextlayerid="20" nextobjectid="1">
   <tileset firstgid="1" name="Modern City" tilewidth="16" tileheight="16" tilecount="1036" columns="37">
     <image source="Tiles/Modern City/Tilemap/tilemap_packed.png" width="592" height="448" />
