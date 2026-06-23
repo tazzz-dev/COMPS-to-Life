@@ -85,8 +85,6 @@ public class GameScreen implements Screen {
     private Vector2 nextPlayerPos = new Vector2();
 
     // NPC and Sound properties
-    private Vector2 npcPos;
-    private Vector2 npcAlmetPos;
     private Texture npcAlmetSheet;
     private Animation<TextureRegion> almetDown, almetUp, almetLeft, almetRight;
     private Direction almetDirection = Direction.DOWN;
@@ -171,11 +169,6 @@ public class GameScreen implements Screen {
         this.targetPos = new Vector2(playerPos);
         loadSavedProgress();
 
-        // NPC Adam at (48,63) - adjusted to passable tile
-        this.npcPos = new Vector2(48 * TILE_SIZE, 63 * TILE_SIZE);
-        // NPC Almet at (48,65) - adjusted to passable tile
-        this.npcAlmetPos = new Vector2(48 * TILE_SIZE, 65 * TILE_SIZE);
-
         // NPC Arka at (90, 114)
         this.npcArkaPos = new Vector2(90 * TILE_SIZE, 114 * TILE_SIZE);
         // NPC Arya at (80, 132)
@@ -186,9 +179,9 @@ public class GameScreen implements Screen {
         this.extraNpcs.add(new GameNPC("Ayu", 80f, 115f, "sprite/ayu.png", "Ayu: Halo! Aku Ayu. Jangan lupa untuk mengerjakan tugas kuliahmu tepat waktu ya!", TILE_SIZE, false));
         this.extraNpcs.add(new GameNPC("Nadhifa", 95f, 121f, "sprite/nadhifa.png", "Nadhifa: Hai! Aku Nadhifa. Selamat datang di Fakultas Ilmu Komputer!", TILE_SIZE, false));
         this.extraNpcs.add(new GameNPC("Nadia", 20f, 25f, "sprite/nadia.png", "Nadia: Halo! Aku Nadia. Senang sekali melihatmu bersemangat menjelajahi kampus ini!", TILE_SIZE, true));
-        this.extraNpcs.add(new GameNPC("Pak Hendra", 53f, 52f, "sprite/pak-hendra.png", "Pak Hendra: Selamat pagi mahasiswa sekalian. Ingat, kegagalan hari ini adalah awal dari kesuksesan!", TILE_SIZE, true));
+        this.extraNpcs.add(new GameNPC("Pak Hendra", 14f, 39f, "sprite/pak-hendra.png", "Pak Hendra: Selamat pagi mahasiswa sekalian. Ingat, kegagalan hari ini adalah awal dari kesuksesan!", TILE_SIZE, "map/Denah Ruangan Kelas.tmx"));
         this.extraNpcs.add(new GameNPC("Reyhan", 76f, 104f, "sprite/reyhan.png", "Reyhan: Hei! Aku Reyhan. Sudahkah kamu memeriksa jadwal kuliah hari ini?", TILE_SIZE, false));
-        this.extraNpcs.add(new GameNPC("Rizky", 49f, 28f, "sprite/rizky.png", "Rizky: Halo bro! Aku Rizky. Jangan lupa minum air putih yang cukup ya kalau sedang coding.", TILE_SIZE, true));
+        this.extraNpcs.add(new GameNPC("Rizky", 25f, 33f, "sprite/rizky.png", "Rizky: Halo bro! Aku Rizky. Jangan lupa minum air putih yang cukup ya kalau sedang coding.", TILE_SIZE, "map/Denah Ruangan Kelas.tmx"));
         this.extraNpcs.add(new GameNPC("Salsa", 45f, 57f, "sprite/salsa.png", "Salsa: Hai! Aku Salsa. Semoga harimu menyenangkan dan perkuliahanmu berjalan lancar!", TILE_SIZE, true));
         this.extraNpcs.add(new GameNPC("Tasya", 75f, 70f, "sprite/tasya.png", "Tasya: Halo! Aku Tasya. Perpustakaan ada di dekat sini, belajarlah dengan rajin!", TILE_SIZE, false));
         this.extraNpcs.add(new GameNPC("Zaki", 107f, 106f, "sprite/zaki.png", "Zaki: Yo! Aku Zaki. Main game boleh saja, tapi jangan sampai melupakan tugas utama kita sebagai mahasiswa.", TILE_SIZE, false));
@@ -779,33 +772,8 @@ public class GameScreen implements Screen {
         game.batch.begin();
         stateTime += delta;
 
-        // Rotation logic for Almet
-        almetTimer += delta;
-        if (almetTimer >= 1.0f) {
-            almetTimer = 0;
-            switch (almetDirection) {
-                case DOWN: almetDirection = Direction.RIGHT; break;
-                case RIGHT: almetDirection = Direction.UP; break;
-                case UP: almetDirection = Direction.LEFT; break;
-                case LEFT: almetDirection = Direction.DOWN; break;
-            }
-        }
-
         // Render NPCs based on current map
         if ("map/map-upnvj.tmx".equals(currentMapName)) {
-            TextureRegion npcFrame = idleDown.getKeyFrame(stateTime, true);
-            game.batch.draw(npcFrame, npcPos.x, npcPos.y, 16, 32);
-
-            Animation<TextureRegion> almetAnim;
-            switch (almetDirection) {
-                case UP: almetAnim = almetUp; break;
-                case LEFT: almetAnim = almetLeft; break;
-                case RIGHT: almetAnim = almetRight; break;
-                default: almetAnim = almetDown; break;
-            }
-            TextureRegion almetFrame = almetAnim.getKeyFrame(stateTime, true);
-            game.batch.draw(almetFrame, npcAlmetPos.x, npcAlmetPos.y, 16, 32);
-
             // Render Arka and Arya NPCs
             game.batch.draw(npcArkaTexture, npcArkaPos.x, npcArkaPos.y, 16, 32);
             game.batch.draw(npcAryaTexture, npcAryaPos.x, npcAryaPos.y, 16, 32);
@@ -813,7 +781,7 @@ public class GameScreen implements Screen {
             // Render extra NPCs
             if (extraNpcs != null) {
                 for (GameNPC npc : extraNpcs) {
-                    if (!npc.isOnSelasar()) {
+                    if ("map/map-upnvj.tmx".equals(npc.getMapName())) {
                         npc.draw(game.batch);
                     }
                 }
@@ -822,7 +790,16 @@ public class GameScreen implements Screen {
             // Render extra Selasar NPCs
             if (extraNpcs != null) {
                 for (GameNPC npc : extraNpcs) {
-                    if (npc.isOnSelasar()) {
+                    if ("map/SelasarFIK.tmx".equals(npc.getMapName())) {
+                        npc.draw(game.batch);
+                    }
+                }
+            }
+        } else if ("map/Denah Ruangan Kelas.tmx".equals(currentMapName)) {
+            // Render extra Classroom NPCs
+            if (extraNpcs != null) {
+                for (GameNPC npc : extraNpcs) {
+                    if ("map/Denah Ruangan Kelas.tmx".equals(npc.getMapName())) {
                         npc.draw(game.batch);
                     }
                 }
@@ -986,33 +963,13 @@ public class GameScreen implements Screen {
 
     private void checkInteraction() {
         if ("map/map-upnvj.tmx".equals(currentMapName)) {
-            if (playerPos.dst(npcPos) <= TILE_SIZE * 1.5f) {
-                currentDialogText = "Adam: Halo! Selamat datang di COMPS to Life. Jelajahi area sekitar untuk menemukan NPC lainnya!";
-                dialogLabel.setText(currentDialogText);
-                showCustomDialog = true;
-            } else if (playerPos.dst(npcAlmetPos) <= TILE_SIZE * 1.5f) {
-                if (completedNpcQuizzes.contains("almet")) {
-                    almetEquipped = !almetEquipped;
-                    saveProgress();
-                    currentDialogText = almetEquipped
-                        ? "Almet: Jas almamater dipakai."
-                        : "Almet: Jas almamater dilepas.";
-                    dialogLabel.setText(currentDialogText);
-                    showCustomDialog = true;
-                } else if (player.getTotalScore() >= ALMET_UNLOCK_SCORE) {
-                    openQuiz();
-                } else {
-                    currentDialogText = "Almet: Kumpulkan minimal " + ALMET_UNLOCK_SCORE + " poin untuk membuka almamater. Poin kamu sekarang: " + player.getTotalScore() + ".";
-                    dialogLabel.setText(currentDialogText);
-                    showCustomDialog = true;
-                }
-            } else if (playerPos.dst(npcArkaPos) <= TILE_SIZE * 1.5f) {
+            if (playerPos.dst(npcArkaPos) <= TILE_SIZE * 1.5f) {
                 startNpcDialogueFlow("Arka");
             } else if (playerPos.dst(npcAryaPos) <= TILE_SIZE * 1.5f) {
                 startNpcDialogueFlow("Arya");
             } else if (extraNpcs != null) {
                 for (GameNPC npc : extraNpcs) {
-                    if (!npc.isOnSelasar() && npc.isNearPlayer(playerPos, TILE_SIZE)) {
+                    if ("map/map-upnvj.tmx".equals(npc.getMapName()) && npc.isNearPlayer(playerPos, TILE_SIZE)) {
                         String key = normalizeNpcKey(npc.getName());
                         if (npcDialogueFlows.containsKey(key)) {
                             startNpcDialogueFlow(npc.getName());
@@ -1036,7 +993,7 @@ public class GameScreen implements Screen {
                 showHint("hint/Plakat-Ruang Dekan.png");
             } else if (extraNpcs != null) {
                 for (GameNPC npc : extraNpcs) {
-                    if (npc.isOnSelasar() && npc.isNearPlayer(playerPos, TILE_SIZE)) {
+                    if ("map/SelasarFIK.tmx".equals(npc.getMapName()) && npc.isNearPlayer(playerPos, TILE_SIZE)) {
                         String key = normalizeNpcKey(npc.getName());
                         if (npcDialogueFlows.containsKey(key)) {
                             startNpcDialogueFlow(npc.getName());
@@ -1052,6 +1009,20 @@ public class GameScreen implements Screen {
         } else if ("map/Denah Ruangan Kelas.tmx".equals(currentMapName)) {
             if (isNearTile(12, 36)) {
                 showHint("hint/Buku Modul-Ruang Kelas Gedung Desar.png");
+            } else if (extraNpcs != null) {
+                for (GameNPC npc : extraNpcs) {
+                    if ("map/Denah Ruangan Kelas.tmx".equals(npc.getMapName()) && npc.isNearPlayer(playerPos, TILE_SIZE)) {
+                        String key = normalizeNpcKey(npc.getName());
+                        if (npcDialogueFlows.containsKey(key)) {
+                            startNpcDialogueFlow(npc.getName());
+                        } else {
+                            currentDialogText = npc.getDialogText();
+                            dialogLabel.setText(currentDialogText);
+                            showCustomDialog = true;
+                        }
+                        break;
+                    }
+                }
             }
         }
     }
@@ -1062,14 +1033,12 @@ public class GameScreen implements Screen {
 
         // Check if there is an NPC at this cell (cellX, cellY)
         if ("map/map-upnvj.tmx".equals(currentMapName)) {
-            if (cellX == 48 && cellY == 63) return false; // npcPos (Adam)
-            if (cellX == 48 && cellY == 65) return false; // npcAlmetPos
             if (cellX == 90 && cellY == 114) return false; // npcArkaPos
             if (cellX == 80 && cellY == 132) return false; // npcAryaPos
 
             if (extraNpcs != null) {
                 for (GameNPC npc : extraNpcs) {
-                    if (!npc.isOnSelasar()) {
+                    if ("map/map-upnvj.tmx".equals(npc.getMapName())) {
                         int npcX = (int) (npc.position.x / TILE_SIZE);
                         int npcY = (int) (npc.position.y / TILE_SIZE);
                         if (cellX == npcX && cellY == npcY) {
@@ -1081,7 +1050,19 @@ public class GameScreen implements Screen {
         } else if ("map/SelasarFIK.tmx".equals(currentMapName)) {
             if (extraNpcs != null) {
                 for (GameNPC npc : extraNpcs) {
-                    if (npc.isOnSelasar()) {
+                    if ("map/SelasarFIK.tmx".equals(npc.getMapName())) {
+                        int npcX = (int) (npc.position.x / TILE_SIZE);
+                        int npcY = (int) (npc.position.y / TILE_SIZE);
+                        if (cellX == npcX && cellY == npcY) {
+                            return false;
+                        }
+                    }
+                }
+            }
+        } else if ("map/Denah Ruangan Kelas.tmx".equals(currentMapName)) {
+            if (extraNpcs != null) {
+                for (GameNPC npc : extraNpcs) {
+                    if ("map/Denah Ruangan Kelas.tmx".equals(npc.getMapName())) {
                         int npcX = (int) (npc.position.x / TILE_SIZE);
                         int npcY = (int) (npc.position.y / TILE_SIZE);
                         if (cellX == npcX && cellY == npcY) {
@@ -1485,6 +1466,7 @@ public class GameScreen implements Screen {
         private final Texture texture;
         private final String dialogText;
         private final boolean onSelasar;
+        private final String mapName;
 
         public GameNPC(String name, float tileX, float tileY, String texturePath, String dialogText, float tileSize, boolean onSelasar) {
             this.name = name;
@@ -1493,6 +1475,17 @@ public class GameScreen implements Screen {
             this.texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
             this.dialogText = dialogText;
             this.onSelasar = onSelasar;
+            this.mapName = onSelasar ? "map/SelasarFIK.tmx" : "map/map-upnvj.tmx";
+        }
+
+        public GameNPC(String name, float tileX, float tileY, String texturePath, String dialogText, float tileSize, String mapName) {
+            this.name = name;
+            this.position = new Vector2(tileX * tileSize, tileY * tileSize);
+            this.texture = new Texture(Gdx.files.internal(texturePath));
+            this.texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+            this.dialogText = dialogText;
+            this.onSelasar = "map/SelasarFIK.tmx".equals(mapName);
+            this.mapName = mapName;
         }
 
         public String getName() {
@@ -1501,6 +1494,10 @@ public class GameScreen implements Screen {
 
         public boolean isOnSelasar() {
             return onSelasar;
+        }
+
+        public String getMapName() {
+            return mapName;
         }
 
         public void draw(com.badlogic.gdx.graphics.g2d.SpriteBatch batch) {
