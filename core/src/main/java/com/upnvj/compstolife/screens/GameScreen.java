@@ -132,7 +132,10 @@ public class GameScreen implements Screen {
     private boolean isPaused = false;
     private ImageButton pauseButton;
     private ImageButton buttonX;
-    private Texture buttonXNormalTex, buttonXHoverTex;
+    private Texture buttonAlmetActiveNormalTex, buttonAlmetActiveHoverTex;
+    private Texture buttonAlmetNonactiveNormalTex, buttonAlmetNonactiveHoverTex;
+    private ImageButton.ImageButtonStyle almetActiveStyle;
+    private ImageButton.ImageButtonStyle almetNonactiveStyle;
     private Table pauseMenuTable;
     private ImageButton resumeButton;
     private ImageButton settingButton;
@@ -413,24 +416,36 @@ public class GameScreen implements Screen {
         uiStage.addActor(pauseButtonTable);
 
         // Setup Button X (Bottom-Right) to toggle almet
-        buttonXNormalTex = new Texture(Gdx.files.internal("btn/button-x-normal.png"));
-        buttonXHoverTex = new Texture(Gdx.files.internal("btn/button-x-hover.png"));
-        buttonXNormalTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
-        buttonXHoverTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        buttonAlmetActiveNormalTex = new Texture(Gdx.files.internal("btn/button-almet-active-normal.png"));
+        buttonAlmetActiveHoverTex = new Texture(Gdx.files.internal("btn/button-almet-active-hover.png"));
+        buttonAlmetNonactiveNormalTex = new Texture(Gdx.files.internal("btn/button-almet-nonactive-normal.png"));
+        buttonAlmetNonactiveHoverTex = new Texture(Gdx.files.internal("btn/button-almet-nonactive-hover.png"));
 
-        TextureRegionDrawable xNormalDrawable = new TextureRegionDrawable(new TextureRegion(buttonXNormalTex));
-        TextureRegionDrawable xHoverDrawable = new TextureRegionDrawable(new TextureRegion(buttonXHoverTex));
-        ImageButton.ImageButtonStyle xStyle = new ImageButton.ImageButtonStyle();
-        xStyle.imageUp = xNormalDrawable;
-        xStyle.imageOver = xHoverDrawable;
+        buttonAlmetActiveNormalTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        buttonAlmetActiveHoverTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        buttonAlmetNonactiveNormalTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        buttonAlmetNonactiveHoverTex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
 
-        buttonX = new ImageButton(xStyle);
+        TextureRegionDrawable activeNormal = new TextureRegionDrawable(new TextureRegion(buttonAlmetActiveNormalTex));
+        TextureRegionDrawable activeHover = new TextureRegionDrawable(new TextureRegion(buttonAlmetActiveHoverTex));
+        almetActiveStyle = new ImageButton.ImageButtonStyle();
+        almetActiveStyle.imageUp = activeNormal;
+        almetActiveStyle.imageOver = activeHover;
+
+        TextureRegionDrawable nonactiveNormal = new TextureRegionDrawable(new TextureRegion(buttonAlmetNonactiveNormalTex));
+        TextureRegionDrawable nonactiveHover = new TextureRegionDrawable(new TextureRegion(buttonAlmetNonactiveHoverTex));
+        almetNonactiveStyle = new ImageButton.ImageButtonStyle();
+        almetNonactiveStyle.imageUp = nonactiveNormal;
+        almetNonactiveStyle.imageOver = nonactiveHover;
+
+        buttonX = new ImageButton(almetEquipped ? almetActiveStyle : almetNonactiveStyle);
         buttonX.setVisible(false);
         buttonX.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 clickSound.play(1.0f);
                 almetEquipped = !almetEquipped;
+                buttonX.setStyle(almetEquipped ? almetActiveStyle : almetNonactiveStyle);
                 saveProgress();
             }
 
@@ -1186,7 +1201,15 @@ public class GameScreen implements Screen {
 
     private void checkInteraction() {
         if ("map/map-upnvj.tmx".equals(currentMapName)) {
-            if (playerPos.dst(npcArkaPos) <= TILE_SIZE * 1.5f) {
+            if (isNearTile(104, 106)) {
+                showHint("hint/Buku Sketsa-Taman Gedung Desar.png");
+            } else if (isNearTile(92, 105)) {
+                showHint("hint/Buku Publikasi-Depan Perpustakaan.png");
+            } else if (isNearTile(98, 119)) {
+                showHint("hint/Buku Adab-Area Dekat Masjid.png");
+            } else if (isNearTile(102, 80)) {
+                showHint("hint/Buku Modul-Kantin Mahasiswa.png");
+            } else if (playerPos.dst(npcArkaPos) <= TILE_SIZE * 1.5f) {
                 startNpcDialogueFlow("Arka");
             } else if (playerPos.dst(npcAryaPos) <= TILE_SIZE * 1.5f) {
                 startNpcDialogueFlow("Arya");
@@ -1565,8 +1588,10 @@ public class GameScreen implements Screen {
         if (idleSheet != null) idleSheet.dispose();
         if (almetWalkSheet != null) almetWalkSheet.dispose();
         if (almetIdleSheet != null) almetIdleSheet.dispose();
-        if (buttonXNormalTex != null) buttonXNormalTex.dispose();
-        if (buttonXHoverTex != null) buttonXHoverTex.dispose();
+        if (buttonAlmetActiveNormalTex != null) buttonAlmetActiveNormalTex.dispose();
+        if (buttonAlmetActiveHoverTex != null) buttonAlmetActiveHoverTex.dispose();
+        if (buttonAlmetNonactiveNormalTex != null) buttonAlmetNonactiveNormalTex.dispose();
+        if (buttonAlmetNonactiveHoverTex != null) buttonAlmetNonactiveHoverTex.dispose();
         if (npcAlmetSheet != null) npcAlmetSheet.dispose();
         if (npcArkaTexture != null) npcArkaTexture.dispose();
         if (npcAryaTexture != null) npcAryaTexture.dispose();
